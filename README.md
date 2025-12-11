@@ -1,2 +1,1 @@
-# naveennks.github.io
-White Secret Santa
+# White Secret Santa
