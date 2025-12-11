@@ -4,26 +4,28 @@
 
 /* CSS Variables / Design Tokens */
 :root {
-    /* Colors - Festive Palette */
+    /* Colors - Snow White Festive Palette */
     --color-primary: #c41e3a;
     --color-primary-dark: #9a1830;
     --color-primary-light: #e63950;
 
-    --color-secondary: #1a472a;
-    --color-secondary-dark: #0f2d1a;
-    --color-secondary-light: #2d6b44;
+    --color-secondary: #f8d8ff;
+    --color-secondary-dark: #e8b8ef;
+    --color-secondary-light: #fcebff;
 
     --color-accent: #ffd700;
     --color-accent-dark: #ccac00;
     --color-accent-light: #ffe44d;
 
-    --color-bg: #0a1628;
-    --color-bg-light: #142238;
-    --color-bg-card: rgba(20, 34, 56, 0.8);
+    /* Snow White Background */
+    --color-bg: #e8f4fc;
+    --color-bg-light: #f0f8ff;
+    --color-bg-card: rgba(255, 255, 255, 0.95);
 
-    --color-text: #ffffff;
-    --color-text-muted: #a0b3c6;
-    --color-text-dark: #6b7c8f;
+    /* Dark Text on Light Background */
+    --color-text: #1a365d;
+    --color-text-muted: #4a6785;
+    --color-text-dark: #2d3748;
 
     --color-success: #22c55e;
     --color-error: #ef4444;
@@ -49,11 +51,11 @@
     --radius-xl: 1.5rem;
     --radius-full: 9999px;
 
-    /* Shadows */
-    --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.1);
-    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.15);
-    --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.2);
-    --shadow-glow: 0 0 20px rgba(196, 30, 58, 0.3);
+    /* Shadows - Adjusted for light background */
+    --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.08);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.12);
+    --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.15);
+    --shadow-glow: 0 0 20px rgba(196, 30, 58, 0.2);
     --shadow-glow-gold: 0 0 20px rgba(255, 215, 0, 0.3);
 
     /* Transitions */
@@ -67,6 +69,7 @@
     --z-modal: 1000;
     --z-toast: 1100;
     --z-snow: 0;
+    --z-decorations: 5;
 }
 
 /* ===================================
@@ -124,11 +127,11 @@ h6 {
 .snowflake {
     position: absolute;
     top: -20px;
-    color: #fff;
+    color: #a8c8e8;
     font-size: 1rem;
-    opacity: 0.8;
+    opacity: 0.6;
     animation: fall linear infinite;
-    text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+    text-shadow: 0 0 5px rgba(100, 150, 200, 0.5);
 }
 
 @keyframes fall {
@@ -186,6 +189,139 @@ h6 {
 }
 
 /* ===================================
+   CHRISTMAS DECORATIONS
+   =================================== */
+
+.christmas-decorations {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 120px;
+    z-index: var(--z-decorations);
+    pointer-events: none;
+    overflow: hidden;
+}
+
+.snow-ground {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 60px;
+    background: linear-gradient(to bottom,
+            rgba(255, 255, 255, 0) 0%,
+            rgba(255, 255, 255, 0.8) 30%,
+            #ffffff 50%,
+            #f0f5f9 100%);
+}
+
+.snow-ground::before {
+    content: '';
+    position: absolute;
+    top: -20px;
+    left: 0;
+    right: 0;
+    height: 40px;
+    background:
+        radial-gradient(ellipse 80px 30px at 10% 100%, white 50%, transparent 50%),
+        radial-gradient(ellipse 100px 35px at 25% 100%, white 50%, transparent 50%),
+        radial-gradient(ellipse 90px 32px at 45% 100%, white 50%, transparent 50%),
+        radial-gradient(ellipse 110px 38px at 65% 100%, white 50%, transparent 50%),
+        radial-gradient(ellipse 85px 30px at 85% 100%, white 50%, transparent 50%),
+        radial-gradient(ellipse 95px 33px at 100% 100%, white 50%, transparent 50%);
+}
+
+.decoration {
+    position: absolute;
+    bottom: 15px;
+    font-size: 3rem;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+}
+
+.decoration-santa {
+    left: 5%;
+    font-size: 3.5rem;
+    animation: santaBob 2s ease-in-out infinite;
+}
+
+.decoration-snowman {
+    left: 20%;
+    font-size: 3rem;
+}
+
+.decoration-tree {
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 4rem;
+    bottom: 20px;
+}
+
+.decoration-tree::after {
+    content: '⭐';
+    position: absolute;
+    top: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 1.2rem;
+    animation: twinkle 1.5s ease-in-out infinite;
+}
+
+.decoration-gift1 {
+    left: 38%;
+    font-size: 2rem;
+    bottom: 10px;
+}
+
+.decoration-gift2 {
+    left: 58%;
+    font-size: 2.2rem;
+    bottom: 12px;
+}
+
+.decoration-gift3 {
+    right: 25%;
+    font-size: 1.8rem;
+    bottom: 8px;
+}
+
+.decoration-snowman2 {
+    right: 15%;
+    font-size: 2.5rem;
+}
+
+.decoration-deer {
+    right: 5%;
+    font-size: 2.8rem;
+}
+
+@keyframes santaBob {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-5px);
+    }
+}
+
+@keyframes twinkle {
+
+    0%,
+    100% {
+        opacity: 1;
+        transform: translateX(-50%) scale(1);
+    }
+
+    50% {
+        opacity: 0.6;
+        transform: translateX(-50%) scale(0.8);
+    }
+}
+
+/* ===================================
    APP CONTAINER & LAYOUT
    =================================== */
 
@@ -193,6 +329,8 @@ h6 {
     max-width: 900px;
     margin: 0 auto;
     padding: var(--space-lg);
+    padding-bottom: 140px;
+    /* Space for Christmas decorations */
     position: relative;
     z-index: var(--z-base);
 }
@@ -371,7 +509,7 @@ h6 {
 .panel-card {
     background: var(--color-bg-card);
     backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(100, 150, 200, 0.2);
     border-radius: var(--radius-xl);
     overflow: hidden;
     box-shadow: var(--shadow-lg);
@@ -379,7 +517,7 @@ h6 {
 
 .card-header {
     padding: var(--space-xl);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    border-bottom: 1px solid rgba(100, 150, 200, 0.15);
     text-align: center;
 }
 
@@ -398,7 +536,7 @@ h6 {
 
 .card-footer {
     padding: var(--space-lg) var(--space-xl);
-    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    border-top: 1px solid rgba(100, 150, 200, 0.15);
     display: flex;
     justify-content: space-between;
     gap: var(--space-md);
@@ -449,7 +587,7 @@ h6 {
     width: 100%;
     padding: var(--space-md) var(--space-lg);
     background: var(--color-bg);
-    border: 2px solid rgba(255, 255, 255, 0.1);
+    border: 2px solid rgba(100, 150, 200, 0.2);
     border-radius: var(--radius-md);
     color: var(--color-text);
     font-size: 1rem;
@@ -537,7 +675,7 @@ h6 {
 .btn-secondary {
     background: var(--color-bg-light);
     color: var(--color-text);
-    border: 2px solid rgba(255, 255, 255, 0.1);
+    border: 2px solid rgba(100, 150, 200, 0.2);
 }
 
 .btn-secondary:hover:not(:disabled) {
@@ -881,6 +1019,55 @@ h6 {
     margin-top: var(--space-xl);
 }
 
+/* Shareable Link Section */
+.shareable-link-section {
+    margin-top: var(--space-2xl);
+    padding: var(--space-xl);
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.1), rgba(34, 197, 94, 0.05));
+    border: 2px solid var(--color-success);
+    border-radius: var(--radius-xl);
+    animation: fadeIn 0.5s ease;
+}
+
+.share-success {
+    margin-bottom: var(--space-lg);
+}
+
+.share-icon {
+    font-size: 2.5rem;
+    display: block;
+    margin-bottom: var(--space-sm);
+}
+
+.share-success h3 {
+    font-size: 1.3rem;
+    color: var(--color-success);
+    margin-bottom: var(--space-xs);
+}
+
+.share-success p {
+    color: var(--color-text-muted);
+}
+
+.share-link-container {
+    display: flex;
+    gap: var(--space-md);
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+.share-link-container input {
+    flex: 1;
+    text-align: left;
+    font-size: 0.9rem;
+}
+
+.share-hint {
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+    margin-top: var(--space-md);
+}
+
 /* ===================================
    REVEAL STEP
    =================================== */
@@ -961,7 +1148,7 @@ h6 {
 
 .reveal-card-hint {
     font-size: 0.8rem;
-    color: rgba(255, 255, 255, 0.7);
+    color: var(--color-text-muted);
     margin-top: var(--space-xs);
 }
 
@@ -979,7 +1166,7 @@ h6 {
 
 .reveal-card-label {
     font-size: 0.85rem;
-    color: rgba(255, 255, 255, 0.7);
+    color: var(--color-text-muted);
     margin-bottom: var(--space-xs);
 }
 
@@ -991,7 +1178,7 @@ h6 {
 
 .reveal-card-wishlist {
     font-size: 0.8rem;
-    color: rgba(255, 255, 255, 0.8);
+    color: var(--color-text-muted);
     margin-top: var(--space-sm);
     font-style: italic;
 }
@@ -1062,7 +1249,7 @@ h6 {
 .loading-spinner {
     width: 50px;
     height: 50px;
-    border: 4px solid rgba(255, 255, 255, 0.2);
+    border: 4px solid rgba(100, 150, 200, 0.3);
     border-top-color: var(--color-primary);
     border-radius: 50%;
     margin: 0 auto var(--space-lg);
@@ -1186,7 +1373,7 @@ h6 {
 
 .reveal-card-hint-large {
     font-size: 1rem;
-    color: rgba(255, 255, 255, 0.8);
+    color: var(--color-text-muted);
 }
 
 .reveal-card-back-large {
@@ -1202,7 +1389,7 @@ h6 {
 
 .reveal-card-label-large {
     font-size: 1rem;
-    color: rgba(255, 255, 255, 0.8);
+    color: var(--color-text-muted);
     margin-bottom: var(--space-sm);
 }
 
@@ -1217,7 +1404,7 @@ h6 {
 .reveal-card-wishlist-large,
 .reveal-card-budget-large {
     font-size: 0.95rem;
-    color: rgba(255, 255, 255, 0.9);
+    color: var(--color-text);
     margin-top: var(--space-xs);
 }
 
@@ -1447,7 +1634,7 @@ h6 {
 
 .modal-header {
     padding: var(--space-lg) var(--space-xl);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    border-bottom: 1px solid rgba(100, 150, 200, 0.15);
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -1480,7 +1667,7 @@ h6 {
 
 .modal-footer {
     padding: var(--space-lg) var(--space-xl);
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    border-top: 1px solid rgba(100, 150, 200, 0.15);
 }
 
 .export-option {

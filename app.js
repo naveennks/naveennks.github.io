@@ -19,7 +19,8 @@ const state = {
     assignments: {},
     generated: false,
     revealedParticipants: [],
-    eventId: null  // Firebase event ID for shareable link
+    eventId: null,
+    revealOnlyMode: false  // When true, show only reveal page (for employees)
 };
 
 // =====================================
@@ -88,6 +89,11 @@ const elements = {
     resetBtn: document.getElementById('resetBtn'),
     exportBtn: document.getElementById('exportBtn'),
 
+    // Shareable Link
+    shareableLinkSection: document.getElementById('shareableLinkSection'),
+    shareableLink: document.getElementById('shareableLink'),
+    copyLinkBtn: document.getElementById('copyLinkBtn'),
+
     // Toast
     toastContainer: document.getElementById('toastContainer'),
 
@@ -105,11 +111,58 @@ const elements = {
 // =====================================
 
 function init() {
+    // Check if this is a reveal-only link for employees
+    if (checkRevealOnlyMode()) {
+        return; // Handled by reveal mode
+    }
+
     loadFromStorage();
     createSnowfall();
     bindEvents();
     updateUI();
     setDefaultDate();
+}
+
+function checkRevealOnlyMode() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const revealEventId = urlParams.get('reveal');
+
+    if (revealEventId) {
+        // This is a reveal-only link for employees
+        state.revealOnlyMode = true;
+        state.eventId = revealEventId;
+
+        // Load event data from storage
+        loadFromStorage();
+
+        // Hide admin UI, show only reveal
+        setupRevealOnlyMode();
+
+        createSnowfall();
+        bindEvents();
+        return true;
+    }
+    return false;
+}
+
+function setupRevealOnlyMode() {
+    // Hide progress nav and header subtitle
+    document.querySelector('.progress-nav').style.display = 'none';
+    document.querySelector('.tagline').style.display = 'none';
+
+    // Hide all panels except reveal
+    document.querySelectorAll('.step-panel').forEach(panel => {
+        panel.classList.remove('active');
+        panel.style.display = 'none';
+    });
+
+    // Show only reveal panel
+    const revealPanel = document.getElementById('step5');
+    revealPanel.style.display = 'block';
+    revealPanel.classList.add('active');
+
+    // Update reveal section
+    updateRevealSection();
 }
 
 function setDefaultDate() {
@@ -374,6 +427,11 @@ function bindEvents() {
         if (e.key === 'Enter') handleEmailReveal();
     });
     elements.tryAgainBtn.addEventListener('click', resetRevealView);
+
+    // Shareable Link
+    if (elements.copyLinkBtn) {
+        elements.copyLinkBtn.addEventListener('click', copyShareableLink);
+    }
 
     // Export
     elements.exportBtn.addEventListener('click', () => {
@@ -684,14 +742,20 @@ function generateAssignments() {
         if (result.success) {
             state.assignments = result.assignments;
             state.generated = true;
+
+            // Generate event ID for shareable link
+            if (!state.eventId) {
+                state.eventId = generateEventId();
+            }
             saveToStorage();
+
+            // Show shareable link
+            showShareableLink();
 
             triggerConfetti();
             showToast('🎉 Assignments generated successfully!', 'success');
 
-            setTimeout(() => {
-                goToStep(5);
-            }, 1000);
+            // Don't auto-navigate - let HR copy the link first
         } else {
             showToast(result.error, 'error');
         }
@@ -699,6 +763,32 @@ function generateAssignments() {
         elements.generateBtn.disabled = false;
         elements.generateBtn.innerHTML = '<span class="btn-sparkle">✨</span> Generate Assignments <span class="btn-sparkle">✨</span>';
     }, 1500);
+}
+
+function showShareableLink() {
+    const baseUrl = window.location.href.split('?')[0];
+    const shareUrl = `${baseUrl}?reveal=${state.eventId}`;
+
+    elements.shareableLink.value = shareUrl;
+    elements.shareableLinkSection.style.display = 'block';
+}
+
+function copyShareableLink() {
+    elements.shareableLink.select();
+    document.execCommand('copy');
+
+    // Also try modern clipboard API
+    if (navigator.clipboard) {
+        navigator.clipboard.writeText(elements.shareableLink.value);
+    }
+
+    showToast('📋 Link copied to clipboard!', 'success');
+
+    // Visual feedback
+    elements.copyLinkBtn.innerHTML = '<span class="btn-icon">✅</span> Copied!';
+    setTimeout(() => {
+        elements.copyLinkBtn.innerHTML = '<span class="btn-icon">📋</span> Copy Link';
+    }, 2000);
 }
 
 function runAssignmentAlgorithm() {

@@ -26,6 +26,19 @@
     <!-- Confetti Container -->
     <div class="confetti-container" id="confetti"></div>
 
+    <!-- Christmas Decorations at Bottom -->
+    <div class="christmas-decorations">
+        <div class="snow-ground"></div>
+        <span class="decoration decoration-santa">🎅</span>
+        <span class="decoration decoration-snowman">⛄</span>
+        <span class="decoration decoration-gift1">🎁</span>
+        <span class="decoration decoration-tree">🎄</span>
+        <span class="decoration decoration-gift2">🎁</span>
+        <span class="decoration decoration-gift3">🎁</span>
+        <span class="decoration decoration-snowman2">☃️</span>
+        <span class="decoration decoration-deer">🦌</span>
+    </div>
+
     <!-- Main Application -->
     <div class="app-container">
         <!-- Header -->
@@ -250,6 +263,23 @@
                             <strong>Note:</strong> Each person will give one gift and receive one gift.
                             Exclusion rules will be respected.
                         </p>
+
+                        <!-- Shareable Link Section (shows after generation) -->
+                        <div class="shareable-link-section" id="shareableLinkSection" style="display: none;">
+                            <div class="share-success">
+                                <span class="share-icon">✅</span>
+                                <h3>Assignments Generated!</h3>
+                                <p>Share this link with employees so they can reveal their match:</p>
+                            </div>
+                            <div class="share-link-container">
+                                <input type="text" id="shareableLink" class="input-field" readonly>
+                                <button class="btn btn-primary" id="copyLinkBtn">
+                                    <span class="btn-icon">📋</span>
+                                    Copy Link
+                                </button>
+                            </div>
+                            <p class="share-hint">Employees will only see the reveal page - not the setup steps</p>
+                        </div>
                     </div>
                     <div class="card-footer">
                         <button class="btn btn-secondary btn-prev" data-prev="3">
