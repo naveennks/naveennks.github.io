@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description"
+        content="Secret Santa Planner - Organize your gift exchange with smart matching, exclusion rules, and beautiful reveals">
+    <title>🎄 Secret Santa Planner</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="index.css">
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+</head>
+
+<body>
+    <!-- Snowfall Background -->
+    <div class="snowfall" id="snowfall"></div>
+
+    <!-- Confetti Container -->
+    <div class="confetti-container" id="confetti"></div>
+
+    <!-- Main Application -->
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="logo">
+                <span class="logo-icon">🎅</span>
+                <h1>Secret Santa</h1>
+            </div>
+            <p class="tagline">Create magical gift exchanges with ease</p>
+        </header>
+
+        <!-- Progress Steps -->
+        <nav class="progress-nav">
+            <div class="progress-track">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div class="progress-steps">
+                <button class="step-btn active" data-step="1">
+                    <span class="step-icon">🎄</span>
+                    <span class="step-label">Setup</span>
+                </button>
+                <button class="step-btn" data-step="2">
+                    <span class="step-icon">👥</span>
+                    <span class="step-label">Participants</span>
+                </button>
+                <button class="step-btn" data-step="3">
+                    <span class="step-icon">🚫</span>
+                    <span class="step-label">Exclusions</span>
+                </button>
+                <button class="step-btn" data-step="4">
+                    <span class="step-icon">🎲</span>
+                    <span class="step-label">Generate</span>
+                </button>
+                <button class="step-btn" data-step="5">
+                    <span class="step-icon">🎁</span>
+                    <span class="step-label">Reveal</span>
+                </button>
+            </div>
+        </nav>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- Step 1: Setup -->
+            <section class="step-panel active" id="step1">
+                <div class="panel-card">
+                    <div class="card-header">
+                        <h2>🎄 Event Setup</h2>
+                        <p>Configure your Secret Santa exchange details</p>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label for="eventName">Event Name</label>
+                            <input type="text" id="eventName" placeholder="Office Holiday Party 2024"
+                                class="input-field">
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="eventDate">Exchange Date</label>
+                                <input type="date" id="eventDate" class="input-field">
+                            </div>
+                            <div class="form-group">
+                                <label for="budget">Budget Limit</label>
+                                <div class="input-with-icon">
+                                    <span class="input-icon">$</span>
+                                    <input type="number" id="budget" placeholder="25" min="0"
+                                        class="input-field has-icon">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="eventMessage">Welcome Message (Optional)</label>
+                            <textarea id="eventMessage" placeholder="Write a festive message for participants..."
+                                class="input-field textarea" rows="3"></textarea>
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <button class="btn btn-primary btn-next" data-next="2">
+                            Add Participants
+                            <span class="btn-icon">→</span>
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Step 2: Participants -->
+            <section class="step-panel" id="step2">
+                <div class="panel-card">
+                    <div class="card-header">
+                        <h2>👥 Participants</h2>
+                        <p>Add everyone who will join the gift exchange</p>
+                    </div>
+                    <div class="card-body">
+                        <div class="add-participant-form">
+                            <div class="form-row compact">
+                                <div class="form-group flex-2">
+                                    <input type="text" id="participantName" placeholder="Name" class="input-field">
+                                </div>
+                                <div class="form-group flex-2">
+                                    <input type="email" id="participantEmail" placeholder="Email (optional)"
+                                        class="input-field">
+                                </div>
+                                <button class="btn btn-accent btn-add" id="addParticipantBtn">
+                                    <span>+</span> Add
+                                </button>
+                            </div>
+                            <div class="form-group">
+                                <input type="text" id="participantWishlist"
+                                    placeholder="Wishlist / Gift ideas (optional)" class="input-field">
+                            </div>
+                        </div>
+
+                        <div class="participants-list" id="participantsList">
+                            <div class="empty-state" id="emptyParticipants">
+                                <span class="empty-icon">👥</span>
+                                <p>No participants yet</p>
+                                <span class="empty-hint">Add at least 3 people to get started</span>
+                            </div>
+                        </div>
+
+                        <div class="participant-count">
+                            <span id="participantCount">0</span> participants added
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <button class="btn btn-secondary btn-prev" data-prev="1">
+                            <span class="btn-icon">←</span>
+                            Back
+                        </button>
+                        <button class="btn btn-primary btn-next" data-next="3" id="toExclusionsBtn">
+                            Set Exclusions
+                            <span class="btn-icon">→</span>
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Step 3: Exclusions -->
+            <section class="step-panel" id="step3">
+                <div class="panel-card">
+                    <div class="card-header">
+                        <h2>🚫 Exclusion Rules</h2>
+                        <p>Define who shouldn't be paired together (couples, family, etc.)</p>
+                    </div>
+                    <div class="card-body">
+                        <div class="add-exclusion-form">
+                            <div class="form-row compact align-center">
+                                <div class="form-group flex-2">
+                                    <select id="exclusionPerson1" class="input-field select-field">
+                                        <option value="">Select person...</option>
+                                    </select>
+                                </div>
+                                <span class="exclusion-arrow">↔️</span>
+                                <div class="form-group flex-2">
+                                    <select id="exclusionPerson2" class="input-field select-field">
+                                        <option value="">Select person...</option>
+                                    </select>
+                                </div>
+                                <button class="btn btn-accent btn-add" id="addExclusionBtn">
+                                    <span>+</span> Add
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="exclusions-list" id="exclusionsList">
+                            <div class="empty-state" id="emptyExclusions">
+                                <span class="empty-icon">✓</span>
+                                <p>No exclusions set</p>
+                                <span class="empty-hint">Anyone can be matched with anyone</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <button class="btn btn-secondary btn-prev" data-prev="2">
+                            <span class="btn-icon">←</span>
+                            Back
+                        </button>
+                        <button class="btn btn-primary btn-next" data-next="4">
+                            Ready to Generate
+                            <span class="btn-icon">→</span>
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Step 4: Generate -->
+            <section class="step-panel" id="step4">
+                <div class="panel-card generate-card">
+                    <div class="card-header">
+                        <h2>🎲 Generate Assignments</h2>
+                        <p>Time for the magic! Click below to create your Secret Santa pairs</p>
+                    </div>
+                    <div class="card-body generate-body">
+                        <div class="generate-summary">
+                            <div class="summary-item">
+                                <span class="summary-icon">👥</span>
+                                <span class="summary-value" id="summaryParticipants">0</span>
+                                <span class="summary-label">Participants</span>
+                            </div>
+                            <div class="summary-item">
+                                <span class="summary-icon">🚫</span>
+                                <span class="summary-value" id="summaryExclusions">0</span>
+                                <span class="summary-label">Exclusions</span>
+                            </div>
+                            <div class="summary-item">
+                                <span class="summary-icon">💰</span>
+                                <span class="summary-value" id="summaryBudget">$0</span>
+                                <span class="summary-label">Budget</span>
+                            </div>
+                        </div>
+
+                        <div class="generate-animation" id="generateAnimation">
+                            <div class="gift-box">🎁</div>
+                        </div>
+
+                        <button class="btn btn-generate" id="generateBtn">
+                            <span class="btn-sparkle">✨</span>
+                            Generate Assignments
+                            <span class="btn-sparkle">✨</span>
+                        </button>
+
+                        <p class="generate-note">
+                            <strong>Note:</strong> Each person will give one gift and receive one gift.
+                            Exclusion rules will be respected.
+                        </p>
+                    </div>
+                    <div class="card-footer">
+                        <button class="btn btn-secondary btn-prev" data-prev="3">
+                            <span class="btn-icon">←</span>
+                            Back
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Step 5: Reveal -->
+            <section class="step-panel" id="step5">
+                <div class="panel-card reveal-card">
+                    <div class="card-header">
+                        <h2>🎁 Reveal Your Match</h2>
+                        <p>Select your name to see who you're getting a gift for!</p>
+                    </div>
+                    <div class="card-body">
+                        <div class="event-banner" id="eventBanner">
+                            <h3 id="revealEventName">Secret Santa 2024</h3>
+                            <p id="revealEventDate"></p>
+                            <p id="revealEventMessage" class="event-message"></p>
+                        </div>
+
+                        <!-- Email Reveal Section -->
+                        <div class="email-reveal-section" id="emailRevealSection">
+                            <div class="signin-prompt">
+                                <span class="signin-icon">🎁</span>
+                                <h3>Enter your email to reveal your match</h3>
+                                <p>Use the email you were registered with</p>
+                            </div>
+                            <div class="email-form">
+                                <input type="email" id="revealEmail" class="input-field"
+                                    placeholder="your.email@example.com">
+                                <button class="btn btn-primary" id="revealEmailBtn">
+                                    <span class="btn-icon">🔓</span>
+                                    Reveal My Match
+                                </button>
+                            </div>
+                            <p class="email-hint">Your assignment will be fetched securely from the server</p>
+                        </div>
+
+                        <!-- Loading State -->
+                        <div class="loading-section" id="loadingSection" style="display: none;">
+                            <div class="loading-spinner"></div>
+                            <p>Finding your match...</p>
+                        </div>
+
+                        <!-- Not Found Message -->
+                        <div class="not-found-section" id="notFoundSection" style="display: none;">
+                            <span class="failed-icon">❌</span>
+                            <p>Email not found!</p>
+                            <span class="failed-details" id="notFoundDetails"></span>
+                            <button class="btn btn-secondary" id="tryAgainBtn">
+                                <span class="btn-icon">🔄</span>
+                                Try Again
+                            </button>
+                        </div>
+
+                        <!-- Single Reveal Card Container -->
+                        <div class="single-reveal-container" id="singleRevealContainer" style="display: none;">
+                            <div class="verified-badge">
+                                <span>✅ Verified as <strong id="verifiedName"></strong></span>
+                            </div>
+                            <div class="reveal-card-large" id="revealCardLarge">
+                                <div class="reveal-card-inner-large">
+                                    <div class="reveal-card-front-large">
+                                        <span class="large-gift-icon">🎁</span>
+                                        <span class="reveal-card-name-large" id="revealForName">Your Name</span>
+                                        <span class="reveal-card-hint-large">Click to reveal your match!</span>
+                                    </div>
+                                    <div class="reveal-card-back-large">
+                                        <span class="large-santa-icon">🎅</span>
+                                        <span class="reveal-card-label-large">You're getting a gift for:</span>
+                                        <span class="reveal-card-match-large" id="revealMatchName">Match Name</span>
+                                        <span class="reveal-card-wishlist-large" id="revealMatchWishlist"></span>
+                                        <span class="reveal-card-budget-large" id="revealMatchBudget"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Already Revealed Message -->
+                        <div class="already-revealed" id="alreadyRevealed" style="display: none;">
+                            <span class="revealed-icon">✅</span>
+                            <p>You've already seen your match!</p>
+                            <span class="revealed-hint">Sign out and sign in again if you need to verify</span>
+                        </div>
+                    </div>
+                    <div class="card-footer reveal-footer">
+                        <button class="btn btn-secondary" id="resetBtn">
+                            <span class="btn-icon">🔄</span>
+                            Start Over
+                        </button>
+                        <button class="btn btn-primary" id="exportBtn">
+                            <span class="btn-icon">📤</span>
+                            Organizer Export
+                        </button>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Toast Notification -->
+        <div class="toast-container" id="toastContainer"></div>
+    </div>
+
+    <!-- Export Modal -->
+    <div class="modal-overlay" id="exportModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>📤 Export Options</h3>
+                <button class="modal-close" id="closeExportModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <button class="export-option" id="exportJSON">
+                    <span class="export-icon">📄</span>
+                    <div class="export-info">
+                        <strong>Download JSON</strong>
+                        <span>Save all data to a file</span>
+                    </div>
+                </button>
+                <button class="export-option" id="copyAssignments">
+                    <span class="export-icon">📋</span>
+                    <div class="export-info">
+                        <strong>Copy Assignments</strong>
+                        <span>Copy list to clipboard</span>
+                    </div>
+                </button>
+                <button class="export-option" id="printCards">
+                    <span class="export-icon">🖨️</span>
+                    <div class="export-info">
+                        <strong>Print Cards</strong>
+                        <span>Print reveal cards</span>
+                    </div>
+                </button>
+            </div>
+            <div class="modal-footer">
+                <div class="import-section">
+                    <label for="importFile" class="btn btn-secondary btn-import">
+                        <span class="btn-icon">📥</span>
+                        Import Data
+                    </label>
+                    <input type="file" id="importFile" accept=".json" hidden>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+
+</html>
