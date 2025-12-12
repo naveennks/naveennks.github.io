@@ -228,13 +228,19 @@ function initFirebase() {
     try {
         // Check if already initialized
         if (!firebase.apps.length) {
+            // Check if config is still default
+            if (firebaseConfig.apiKey === 'YOUR_API_KEY') {
+                console.warn('⚠️ Firebase not configured. Using local storage only.');
+                return;
+            }
             firebase.initializeApp(firebaseConfig);
         }
         db = firebase.firestore();
         firebaseInitialized = true;
-        console.log('Firebase initialized successfully');
+        console.log('✅ Firebase initialized successfully');
     } catch (error) {
-        console.error('Firebase initialization error:', error);
+        console.error('❌ Firebase initialization error:', error);
+        showToast('Firebase connection failed. Using local mode only.', 'warning');
     }
 }
 
@@ -300,15 +306,25 @@ async function lookupAssignmentByEmail(email, eventId) {
         throw new Error('Firebase not initialized');
     }
 
-    const emailLower = email.toLowerCase().trim();
-    const assignmentDoc = await db.collection('events').doc(eventId)
-        .collection('assignments').doc(emailLower).get();
+    try {
+        const emailLower = email.toLowerCase().trim();
+        const assignmentDoc = await db.collection('events').doc(eventId)
+            .collection('assignments').doc(emailLower).get();
 
-    if (!assignmentDoc.exists) {
-        return null;
+        if (!assignmentDoc.exists) {
+            return null;
+        }
+
+        return assignmentDoc.data();
+    } catch (error) {
+        console.error('Firebase lookup error:', error);
+        if (error.code === 'permission-denied') {
+            throw new Error('Access denied. Please check Firebase security rules.');
+        } else if (error.code === 'unavailable') {
+            throw new Error('Network error. Please check your internet connection.');
+        }
+        throw error;
     }
-
-    return assignmentDoc.data();
 }
 
 // =====================================
@@ -387,7 +403,11 @@ function bindEvents() {
     document.querySelectorAll('.btn-next').forEach(btn => {
         btn.addEventListener('click', () => {
             const nextStep = parseInt(btn.dataset.next);
-            goToStep(nextStep);
+            
+            // Validate before moving forward
+            if (validateCurrentStep()) {
+                goToStep(nextStep);
+            }
         });
     });
 
@@ -505,12 +525,80 @@ function bindEvents() {
 // NAVIGATION
 // =====================================
 
+function validateCurrentStep() {
+    const step = state.currentStep;
+    
+    switch(step) {
+        case 1:
+            // Event setup - optional but warn if empty
+            if (!state.event.name) {
+                showToast('💡 Tip: Give your event a memorable name!', 'warning');
+            }
+            return true;
+            
+        case 2:
+            // Participants - must have at least 3
+            if (state.participants.length < 3) {
+                showToast('❌ Add at least 3 participants to continue', 'error');
+                elements.participantName.focus();
+                return false;
+            }
+            return true;
+            
+        case 3:
+            // Exclusions - optional
+            return true;
+            
+        case 4:
+            // Generate - must have assignments
+            if (!state.generated) {
+                showToast('❌ Generate assignments before proceeding', 'error');
+                return false;
+            }
+            return true;
+            
+        default:
+            return true;
+    }
+}
+
 function canGoToStep(step) {
     if (step <= state.currentStep) return true;
+    
+    // Step 2: Always allow (add participants)
     if (step === 2) return true;
-    if (step === 3) return state.participants.length >= 3;
-    if (step === 4) return state.participants.length >= 3;
-    if (step === 5) return state.generated;
+    
+    // Step 3: Need at least 3 participants
+    if (step === 3) {
+        if (state.participants.length < 3) {
+            showToast('Add at least 3 participants before setting exclusions', 'warning');
+            return false;
+        }
+        return true;
+    }
+    
+    // Step 4: Need at least 3 participants
+    if (step === 4) {
+        if (state.participants.length < 3) {
+            showToast('Add at least 3 participants to generate assignments', 'warning');
+            return false;
+        }
+        // Warn if event name is missing
+        if (!state.event.name) {
+            showToast('Consider adding an event name in Step 1', 'warning');
+        }
+        return true;
+    }
+    
+    // Step 5: Must have generated assignments
+    if (step === 5) {
+        if (!state.generated) {
+            showToast('Generate assignments first in Step 4', 'error');
+            return false;
+        }
+        return true;
+    }
+    
     return false;
 }
 
@@ -526,15 +614,28 @@ function goToStep(step) {
     // Update progress bar
     const progress = ((step - 1) / 4) * 100;
     elements.progressFill.style.width = progress + '%';
+    
+    // Update progress bar ARIA
+    const progressTrack = document.querySelector('.progress-track');
+    if (progressTrack) {
+        progressTrack.setAttribute('aria-valuenow', progress);
+    }
 
     // Update step buttons
     elements.stepBtns.forEach(btn => {
         const btnStep = parseInt(btn.dataset.step);
         btn.classList.remove('active', 'completed');
+        btn.removeAttribute('aria-current');
+        
         if (btnStep === step) {
             btn.classList.add('active');
+            btn.setAttribute('aria-current', 'step');
+            btn.setAttribute('tabindex', '0');
         } else if (btnStep < step) {
             btn.classList.add('completed');
+            btn.setAttribute('tabindex', '0');
+        } else {
+            btn.setAttribute('tabindex', '-1');
         }
     });
 
@@ -636,15 +737,19 @@ function renderParticipants() {
 
         const item = document.createElement('div');
         item.className = 'participant-item';
+        item.setAttribute('role', 'listitem');
         item.innerHTML = `
-            <div class="participant-avatar">${initials}</div>
+            <div class="participant-avatar" aria-hidden="true">${initials}</div>
             <div class="participant-info">
                 <div class="participant-name">${escapeHtml(participant.name)}</div>
                 ${participant.email ? `<div class="participant-email">${escapeHtml(participant.email)}</div>` : ''}
-                ${participant.wishlist ? `<div class="participant-wishlist">🎁 ${escapeHtml(participant.wishlist)}</div>` : ''}
+                ${participant.wishlist ? `<div class="participant-wishlist"><span aria-hidden="true">🎁</span> ${escapeHtml(participant.wishlist)}</div>` : ''}
             </div>
             <div class="participant-actions">
-                <button class="btn-icon-only btn-delete" onclick="removeParticipant('${participant.id}')" title="Remove">🗑️</button>
+                <button class="btn-icon-only btn-delete" onclick="removeParticipant('${participant.id}')" 
+                    aria-label="Remove ${escapeHtml(participant.name)}" title="Remove">
+                    <span aria-hidden="true">🗑️</span>
+                </button>
             </div>
         `;
 
@@ -846,13 +951,29 @@ function runAssignmentAlgorithm() {
         attempts++;
         const result = tryAssignment();
         if (result.success) {
+            console.log(`✅ Valid assignment found in ${attempts} attempts`);
             return result;
         }
     }
 
+    // Provide helpful error message based on constraints
+    const participantCount = state.participants.length;
+    const exclusionCount = state.exclusions.length;
+    const exclusionRatio = exclusionCount / participantCount;
+    
+    let errorMsg = '❌ Could not generate valid assignments after 1000 attempts.\n\n';
+    
+    if (exclusionRatio > 0.5) {
+        errorMsg += `You have ${exclusionCount} exclusions for ${participantCount} people. Try removing some exclusion rules.`;
+    } else if (participantCount < 4) {
+        errorMsg += 'With only 3 participants and exclusions, valid assignments are very limited.';
+    } else {
+        errorMsg += 'Try: 1) Remove some exclusions, 2) Add more participants, or 3) Try regenerating.';
+    }
+
     return {
         success: false,
-        error: 'Could not generate valid assignments. Try reducing exclusions.'
+        error: errorMsg
     };
 }
 
@@ -1287,7 +1408,7 @@ function exportToJSON() {
 }
 
 function copyAssignmentsToClipboard() {
-    let text = `🎅 ${state.event.name || 'Secret Santa'} Assignments\n`;
+    let text = `🎁 ${state.event.name || 'Secret Santa'} Assignments\n`;
     text += `📅 ${state.event.date || 'TBD'}\n`;
     if (state.event.budget) {
         text += `💰 Budget: ₹${state.event.budget}\n`;
@@ -1381,7 +1502,26 @@ function saveToStorage() {
         revealedParticipants: state.revealedParticipants
     };
 
-    localStorage.setItem('secretSantaData', JSON.stringify(data));
+    try {
+        localStorage.setItem('secretSantaData', JSON.stringify(data));
+    } catch (error) {
+        if (error.name === 'QuotaExceededError') {
+            console.error('❌ localStorage quota exceeded');
+            showToast('Storage limit reached. Try exporting data and clearing old events.', 'error');
+            // Try to clear old reveal data to make space
+            try {
+                const keys = Object.keys(localStorage).filter(k => k.startsWith('secretsanta_revealed_'));
+                keys.forEach(k => localStorage.removeItem(k));
+                localStorage.setItem('secretSantaData', JSON.stringify(data));
+                showToast('Cleared old data. Save successful.', 'success');
+            } catch (e) {
+                showToast('Unable to save. Please export your data.', 'error');
+            }
+        } else {
+            console.error('Save error:', error);
+            showToast('Failed to save data locally', 'error');
+        }
+    }
 }
 
 function loadFromStorage() {
@@ -1465,10 +1605,24 @@ function showToast(message, type = 'success') {
     }, 3000);
 }
 
-// Keyboard shortcut for shake animation
+// Keyboard shortcuts for accessibility
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
         elements.exportModal.classList.remove('active');
+    }
+    
+    // Arrow key navigation for steps
+    if (e.target.classList.contains('step-btn')) {
+        const currentStep = parseInt(e.target.dataset.step);
+        if (e.key === 'ArrowLeft' && currentStep > 1) {
+            e.preventDefault();
+            const prevBtn = document.querySelector(`.step-btn[data-step="${currentStep - 1}"]`);
+            if (prevBtn) prevBtn.focus();
+        } else if (e.key === 'ArrowRight' && currentStep < 5) {
+            e.preventDefault();
+            const nextBtn = document.querySelector(`.step-btn[data-step="${currentStep + 1}"]`);
+            if (nextBtn) nextBtn.focus();
+        }
     }
 });
 

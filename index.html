@@ -27,9 +27,9 @@
     <div class="confetti-container" id="confetti"></div>
 
     <!-- Christmas Decorations at Bottom -->
-    <div class="christmas-decorations">
+    <!-- <div class="christmas-decorations">
         <div class="snow-ground"></div>
-        <span class="decoration decoration-santa">🎅</span>
+        <span class="decoration decoration-santa">❄️</span>
         <span class="decoration decoration-snowman">⛄</span>
         <span class="decoration decoration-gift1">🎁</span>
         <span class="decoration decoration-tree">🎄</span>
@@ -37,14 +37,14 @@
         <span class="decoration decoration-gift3">🎁</span>
         <span class="decoration decoration-snowman2">☃️</span>
         <span class="decoration decoration-deer">🦌</span>
-    </div>
+    </div> -->
 
     <!-- Main Application -->
     <div class="app-container">
         <!-- Header -->
         <header class="app-header">
             <div class="logo">
-                <img src="logo.png" alt="WHITE" class="logo-image">
+                <img src="images/logo.png" alt="WHITE" class="logo-image">
             </div>
             <p class="tagline">Create magical gift exchanges with ease</p>
         </header>
@@ -160,9 +160,9 @@
                             </div>
                         </div>
 
-                        <div class="participants-list" id="participantsList">
+                        <div class="participants-list" id="participantsList" role="list" aria-live="polite" aria-label="Participants list">
                             <div class="empty-state" id="emptyParticipants">
-                                <span class="empty-icon">👥</span>
+                                <span class="empty-icon" aria-hidden="true">👥</span>
                                 <p>No participants yet</p>
                                 <span class="empty-hint">Add at least 3 people to get started</span>
                             </div>
@@ -406,7 +406,7 @@
                                         <span class="reveal-card-hint-large">Click to reveal your match!</span>
                                     </div>
                                     <div class="reveal-card-back-large">
-                                        <span class="large-santa-icon">🎅</span>
+                                        <span class="large-santa-icon">⭐</span>
                                         <span class="reveal-card-label-large">You're getting a gift for:</span>
                                         <span class="reveal-card-match-large" id="revealMatchName">Match Name</span>
                                         <span class="reveal-card-wishlist-large" id="revealMatchWishlist"></span>
@@ -485,6 +485,5 @@
 
     <script src="app.js"></script>
 </body>
-
 
 </html>
