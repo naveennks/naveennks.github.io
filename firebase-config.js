@@ -23,16 +23,26 @@ const firebaseConfig = {
 // Initialize Firebase
 let app;
 let db;
+let auth;
 
-try {
-  app = firebase.initializeApp(firebaseConfig);
-  db = firebase.firestore();
-  console.log("✅ Firebase initialized successfully");
-} catch (error) {
-  console.error("❌ Firebase initialization error:", error);
-  alert("Firebase configuration error. Please check your firebase-config.js file.");
+// Wait for Firebase SDK to load
+if (typeof firebase !== 'undefined') {
+  try {
+    app = firebase.initializeApp(firebaseConfig);
+    db = firebase.firestore();
+    auth = firebase.auth();
+    console.log("✅ Firebase initialized successfully");
+    console.log("✅ Firebase Auth enabled for email link verification");
+    
+    // Export for use in other files
+    window.db = db;
+    window.firebase = firebase;
+    window.auth = auth;
+  } catch (error) {
+    console.error("❌ Firebase initialization error:", error);
+    alert("Firebase configuration error. Please check your firebase-config.js file.");
+  }
+} else {
+  console.error("❌ Firebase SDK not loaded");
+  alert("Firebase SDK not loaded. Please check your internet connection.");
 }
-
-// Export for use in other files
-window.db = db;
-window.firebase = firebase;
