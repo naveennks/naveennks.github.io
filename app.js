@@ -94,6 +94,18 @@ const elements = {
     shareableLink: document.getElementById('shareableLink'),
     copyLinkBtn: document.getElementById('copyLinkBtn'),
 
+    // Admin Dashboard
+    viewDashboardBtn: document.getElementById('viewDashboardBtn'),
+    adminDashboard: document.getElementById('adminDashboard'),
+    assignmentsTableBody: document.getElementById('assignmentsTableBody'),
+    regenerateBtn: document.getElementById('regenerateBtn'),
+    hideDashboardBtn: document.getElementById('hideDashboardBtn'),
+    downloadCsvBtn: document.getElementById('downloadCsvBtn'),
+
+    // CSV Import
+    importCsvBtn: document.getElementById('importCsvBtn'),
+    importCsvFile: document.getElementById('importCsvFile'),
+
     // Toast
     toastContainer: document.getElementById('toastContainer'),
 
@@ -161,7 +173,18 @@ function setupRevealOnlyMode() {
     revealPanel.style.display = 'block';
     revealPanel.classList.add('active');
 
-    // Update reveal section
+    // Hide organizer buttons (Start Over, Export) for employees
+    const revealFooter = document.getElementById('revealFooter');
+    if (revealFooter) {
+        revealFooter.style.display = 'none';
+    }
+
+    // Check if user already revealed - show their card directly
+    if (checkSavedReveal()) {
+        return; // Already showing saved card
+    }
+
+    // Otherwise update reveal section normally (show email input)
     updateRevealSection();
 }
 
@@ -431,6 +454,30 @@ function bindEvents() {
     // Shareable Link
     if (elements.copyLinkBtn) {
         elements.copyLinkBtn.addEventListener('click', copyShareableLink);
+    }
+
+    // Admin Dashboard
+    if (elements.viewDashboardBtn) {
+        elements.viewDashboardBtn.addEventListener('click', showAdminDashboard);
+    }
+    if (elements.hideDashboardBtn) {
+        elements.hideDashboardBtn.addEventListener('click', hideAdminDashboard);
+    }
+    if (elements.regenerateBtn) {
+        elements.regenerateBtn.addEventListener('click', regenerateAssignments);
+    }
+    if (elements.downloadCsvBtn) {
+        elements.downloadCsvBtn.addEventListener('click', downloadAssignmentsCsv);
+    }
+
+    // CSV Import
+    if (elements.importCsvBtn) {
+        elements.importCsvBtn.addEventListener('click', () => {
+            elements.importCsvFile.click();
+        });
+    }
+    if (elements.importCsvFile) {
+        elements.importCsvFile.addEventListener('change', handleCsvImport);
     }
 
     // Export
@@ -716,7 +763,7 @@ function renderExclusions() {
 function updateGenerateSummary() {
     elements.summaryParticipants.textContent = state.participants.length;
     elements.summaryExclusions.textContent = state.exclusions.length;
-    elements.summaryBudget.textContent = state.event.budget ? `$${state.event.budget}` : 'None';
+    elements.summaryBudget.textContent = state.event.budget ? `₹${state.event.budget}` : 'None';
 }
 
 function generateAssignments() {
@@ -843,6 +890,16 @@ function tryAssignment() {
         assignments[giver.id] = receiver.id;
     }
 
+    // Check for cross-matching (reciprocal assignments)
+    // If A gives to B, then B should NOT give back to A
+    for (const giverId in assignments) {
+        const receiverId = assignments[giverId];
+        // Check if the receiver gives back to this giver
+        if (assignments[receiverId] === giverId) {
+            return { success: false };
+        }
+    }
+
     return { success: true, assignments };
 }
 
@@ -937,12 +994,6 @@ function handleLocalEmailReveal(email) {
         return;
     }
 
-    // Check if already revealed
-    if (state.revealedParticipants.includes(participant.id)) {
-        showAlreadyRevealed();
-        return;
-    }
-
     // Get their match
     const matchId = state.assignments[participant.id];
     const match = state.participants.find(p => p.id === matchId);
@@ -952,12 +1003,19 @@ function handleLocalEmailReveal(email) {
         return;
     }
 
+    // Check if already revealed - still show their card but already flipped
+    if (state.revealedParticipants.includes(participant.id)) {
+        showRevealCardAlreadyFlipped(participant, match);
+        return;
+    }
+
     showRevealCard(participant, match);
 }
 
 function getEventIdFromUrl() {
     const urlParams = new URLSearchParams(window.location.search);
-    return urlParams.get('event');
+    // Check both 'reveal' and 'event' parameters
+    return urlParams.get('reveal') || urlParams.get('event');
 }
 
 function showLoading() {
@@ -991,7 +1049,7 @@ function showRevealCardFromFirebase(assignment, email) {
     }
 
     if (assignment.budget) {
-        elements.revealMatchBudget.textContent = `💰 Budget: $${assignment.budget}`;
+        elements.revealMatchBudget.textContent = `💰 Budget: ₹${assignment.budget}`;
         elements.revealMatchBudget.style.display = 'block';
     } else {
         elements.revealMatchBudget.style.display = 'none';
@@ -1027,7 +1085,7 @@ function showRevealCard(participant, match) {
     }
 
     if (state.event.budget) {
-        elements.revealMatchBudget.textContent = `💰 Budget: $${state.event.budget}`;
+        elements.revealMatchBudget.textContent = `💰 Budget: ₹${state.event.budget}`;
         elements.revealMatchBudget.style.display = 'block';
     } else {
         elements.revealMatchBudget.style.display = 'none';
@@ -1038,6 +1096,40 @@ function showRevealCard(participant, match) {
 
     // Bind click to flip card
     elements.revealCardLarge.onclick = () => flipRevealCard(participant.id);
+}
+
+// Show reveal card already flipped (for users who already revealed)
+function showRevealCardAlreadyFlipped(participant, match) {
+    // Hide other views, show reveal card
+    elements.emailRevealSection.style.display = 'none';
+    elements.loadingSection.style.display = 'none';
+    elements.notFoundSection.style.display = 'none';
+    elements.alreadyRevealed.style.display = 'none';
+    elements.singleRevealContainer.style.display = 'flex';
+
+    // Set verified name badge
+    elements.verifiedName.textContent = participant.name;
+
+    // Set up the card content
+    elements.revealForName.textContent = participant.name;
+    elements.revealMatchName.textContent = match.name;
+
+    if (match.wishlist) {
+        elements.revealMatchWishlist.textContent = `💡 ${match.wishlist}`;
+        elements.revealMatchWishlist.style.display = 'block';
+    } else {
+        elements.revealMatchWishlist.style.display = 'none';
+    }
+
+    if (state.event.budget) {
+        elements.revealMatchBudget.textContent = `💰 Budget: ₹${state.event.budget}`;
+        elements.revealMatchBudget.style.display = 'block';
+    } else {
+        elements.revealMatchBudget.style.display = 'none';
+    }
+
+    // Card already revealed (flipped state)
+    elements.revealCardLarge.classList.add('revealed');
 }
 
 function showNotFound(email) {
@@ -1062,14 +1154,86 @@ function flipRevealCardSimple() {
     if (elements.revealCardLarge.classList.contains('revealed')) return;
 
     elements.revealCardLarge.classList.add('revealed');
+
+    // Save the revealed card data to localStorage
+    saveRevealedCard();
+
     triggerConfetti();
     showToast('🎁 Your Secret Santa match is revealed!', 'success');
+}
+
+// Save revealed card to localStorage so user sees it on return
+function saveRevealedCard() {
+    const eventId = getEventIdFromUrl() || state.eventId || 'local';
+    const revealData = {
+        participantName: elements.revealForName.textContent,
+        matchName: elements.revealMatchName.textContent,
+        matchWishlist: elements.revealMatchWishlist.textContent,
+        budget: elements.revealMatchBudget.textContent,
+        revealedAt: new Date().toISOString()
+    };
+
+    localStorage.setItem(`secretsanta_revealed_${eventId}`, JSON.stringify(revealData));
+}
+
+// Check if user has already revealed and show their card
+function checkSavedReveal() {
+    const eventId = getEventIdFromUrl() || state.eventId || 'local';
+    const savedData = localStorage.getItem(`secretsanta_revealed_${eventId}`);
+
+    if (savedData) {
+        try {
+            const revealData = JSON.parse(savedData);
+            showSavedRevealCard(revealData);
+            return true;
+        } catch (e) {
+            console.error('Error parsing saved reveal data:', e);
+        }
+    }
+    return false;
+}
+
+// Display a previously saved reveal card
+function showSavedRevealCard(revealData) {
+    // Hide other views, show reveal card
+    elements.emailRevealSection.style.display = 'none';
+    elements.loadingSection.style.display = 'none';
+    elements.notFoundSection.style.display = 'none';
+    elements.alreadyRevealed.style.display = 'none';
+    elements.singleRevealContainer.style.display = 'flex';
+
+    // Set verified name badge
+    elements.verifiedName.textContent = revealData.participantName;
+
+    // Set up the card content
+    elements.revealForName.textContent = revealData.participantName;
+    elements.revealMatchName.textContent = revealData.matchName;
+
+    if (revealData.matchWishlist) {
+        elements.revealMatchWishlist.textContent = revealData.matchWishlist;
+        elements.revealMatchWishlist.style.display = 'block';
+    } else {
+        elements.revealMatchWishlist.style.display = 'none';
+    }
+
+    if (revealData.budget) {
+        elements.revealMatchBudget.textContent = revealData.budget;
+        elements.revealMatchBudget.style.display = 'block';
+    } else {
+        elements.revealMatchBudget.style.display = 'none';
+    }
+
+    // Show card already flipped (revealed state)
+    elements.revealCardLarge.classList.add('revealed');
 }
 
 function flipRevealCard(participantId) {
     if (elements.revealCardLarge.classList.contains('revealed')) return;
 
     elements.revealCardLarge.classList.add('revealed');
+
+    // Save revealed card to localStorage for persistence
+    saveRevealedCard();
 
     // Mark as revealed and save
     if (!state.revealedParticipants.includes(participantId)) {
@@ -1126,7 +1290,7 @@ function copyAssignmentsToClipboard() {
     let text = `🎅 ${state.event.name || 'Secret Santa'} Assignments\n`;
     text += `📅 ${state.event.date || 'TBD'}\n`;
     if (state.event.budget) {
-        text += `💰 Budget: $${state.event.budget}\n`;
+        text += `💰 Budget: ₹${state.event.budget}\n`;
     }
     text += '\n';
 
@@ -1317,3 +1481,219 @@ document.addEventListener('DOMContentLoaded', init);
 // Expose functions for onclick handlers
 window.removeParticipant = removeParticipant;
 window.removeExclusion = removeExclusion;
+window.swapAssignment = swapAssignment;
+
+// =====================================
+// ADMIN DASHBOARD FUNCTIONS
+// =====================================
+
+function showAdminDashboard() {
+    if (!state.generated) {
+        showToast('Please generate assignments first', 'error');
+        return;
+    }
+
+    // Populate the assignments table
+    const tbody = elements.assignmentsTableBody;
+    tbody.innerHTML = '';
+
+    state.participants.forEach(giver => {
+        const receiverId = state.assignments[giver.id];
+        const receiver = state.participants.find(p => p.id === receiverId);
+        if (!receiver) return;
+
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td><strong>${giver.name}</strong><br><small>${giver.email || ''}</small></td>
+            <td class="arrow-cell">🎁→</td>
+            <td><strong>${receiver.name}</strong><br><small>${receiver.email || ''}</small></td>
+            <td class="action-cell">
+                <button class="btn btn-secondary btn-edit" onclick="swapAssignment('${giver.id}')">
+                    ✏️ Edit
+                </button>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+
+    elements.adminDashboard.style.display = 'block';
+    showToast('📊 Admin Dashboard opened', 'success');
+}
+
+function hideAdminDashboard() {
+    elements.adminDashboard.style.display = 'none';
+}
+
+function downloadAssignmentsCsv() {
+    if (!state.generated) {
+        showToast('Please generate assignments first', 'error');
+        return;
+    }
+
+    // Get the reveal link
+    const eventId = state.eventId || generateId();
+    const revealLink = `${window.location.origin}${window.location.pathname}?reveal=${eventId}`;
+
+    // Create CSV content
+    let csv = 'Giver Name,Giver Email,Receiver Name,Receiver Email,Reveal Link\n';
+
+    state.participants.forEach(giver => {
+        const receiverId = state.assignments[giver.id];
+        const receiver = state.participants.find(p => p.id === receiverId);
+        if (!receiver) return;
+
+        // Escape commas in names/emails
+        const giverName = giver.name.replace(/,/g, ' ');
+        const giverEmail = (giver.email || '').replace(/,/g, ' ');
+        const receiverName = receiver.name.replace(/,/g, ' ');
+        const receiverEmail = (receiver.email || '').replace(/,/g, ' ');
+
+        csv += `${giverName},${giverEmail},${receiverName},${receiverEmail},${revealLink}\n`;
+    });
+
+    // Create downloadable file
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `secret_santa_assignments_${new Date().toISOString().split('T')[0]}.csv`;
+
+    // Trigger download
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    showToast('📥 CSV downloaded successfully!', 'success');
+}
+
+function regenerateAssignments() {
+    if (confirm('This will regenerate all assignments. Employees who already revealed their match might get a different person. Continue?')) {
+        // Clear revealed participants locally
+        state.revealedParticipants = [];
+        state.generated = false;
+
+        // Re-generate
+        generateAssignments();
+
+        // Close dashboard
+        hideAdminDashboard();
+    }
+}
+
+function swapAssignment(giverId) {
+    const giver = state.participants.find(p => p.id === giverId);
+    const currentReceiverId = state.assignments[giverId];
+    const currentReceiver = state.participants.find(p => p.id === currentReceiverId);
+
+    // Get available receivers (all except current receiver and giver themselves)
+    const availableReceivers = state.participants.filter(p =>
+        p.id !== giverId && p.id !== currentReceiverId
+    );
+
+    if (availableReceivers.length === 0) {
+        showToast('No other receivers available to swap', 'error');
+        return;
+    }
+
+    // Create a simple dropdown prompt
+    const names = availableReceivers.map(p => p.name).join('\n');
+    const newReceiverName = prompt(
+        `${giver.name} is currently giving to ${currentReceiver.name}.\n\nChoose a new receiver from:\n${names}\n\nEnter the exact name:`
+    );
+
+    if (!newReceiverName) return;
+
+    const newReceiver = availableReceivers.find(p =>
+        p.name.toLowerCase() === newReceiverName.toLowerCase().trim()
+    );
+
+    if (!newReceiver) {
+        showToast('Receiver not found. Please enter the exact name.', 'error');
+        return;
+    }
+
+    // Find who was giving to the new receiver and swap
+    const otherGiverId = Object.keys(state.assignments).find(
+        id => state.assignments[id] === newReceiver.id
+    );
+
+    if (otherGiverId) {
+        // Do the swap
+        state.assignments[giverId] = newReceiver.id;
+        state.assignments[otherGiverId] = currentReceiverId;
+
+        saveToStorage();
+        showToast(`✅ Swapped: ${giver.name} → ${newReceiver.name}`, 'success');
+
+        // Refresh dashboard
+        showAdminDashboard();
+    }
+}
+
+// =====================================
+// CSV IMPORT FUNCTION
+// =====================================
+
+function handleCsvImport(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+
+    reader.onload = function (e) {
+        const content = e.target.result;
+        let participants = [];
+
+        try {
+            if (file.name.endsWith('.json')) {
+                // Parse JSON
+                participants = JSON.parse(content);
+            } else {
+                // Parse CSV (name,email,wishlist format)
+                const lines = content.split('\n').filter(line => line.trim());
+
+                // Skip header if present
+                const startLine = lines[0].toLowerCase().includes('name') ? 1 : 0;
+
+                for (let i = startLine; i < lines.length; i++) {
+                    const parts = lines[i].split(',').map(p => p.trim());
+                    if (parts[0]) {
+                        participants.push({
+                            name: parts[0],
+                            email: parts[1] || '',
+                            wishlist: parts[2] || ''
+                        });
+                    }
+                }
+            }
+
+            // Add participants
+            let added = 0;
+            participants.forEach(p => {
+                if (p.name) {
+                    state.participants.push({
+                        id: generateId(),
+                        name: p.name,
+                        email: p.email || '',
+                        wishlist: p.wishlist || ''
+                    });
+                    added++;
+                }
+            });
+
+            saveToStorage();
+            updateParticipantsList();
+
+            showToast(`📥 Imported ${added} participants!`, 'success');
+
+        } catch (error) {
+            console.error('Import error:', error);
+            showToast('Error importing file. Check format.', 'error');
+        }
+    };
+
+    reader.readAsText(file);
+    // Reset input so same file can be selected again
+    event.target.value = '';
+}

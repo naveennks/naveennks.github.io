@@ -44,8 +44,7 @@
         <!-- Header -->
         <header class="app-header">
             <div class="logo">
-                <span class="logo-icon">🎅</span>
-                <h1>Secret Santa</h1>
+                <img src="images/logo.png" alt="WHITE" class="logo-image">
             </div>
             <p class="tagline">Create magical gift exchanges with ease</p>
         </header>
@@ -127,8 +126,19 @@
             <section class="step-panel" id="step2">
                 <div class="panel-card">
                     <div class="card-header">
-                        <h2>👥 Participants</h2>
-                        <p>Add everyone who will join the gift exchange</p>
+                        <div class="header-with-action">
+                            <div>
+                                <h2>👥 Participants</h2>
+                                <p>Add everyone who will join the gift exchange</p>
+                            </div>
+                            <div class="header-actions">
+                                <input type="file" id="importCsvFile" accept=".csv,.json" style="display: none;">
+                                <button class="btn btn-secondary btn-sm" id="importCsvBtn">
+                                    <span class="btn-icon">📥</span>
+                                    Import CSV
+                                </button>
+                            </div>
+                        </div>
                     </div>
                     <div class="card-body">
                         <div class="add-participant-form">
@@ -279,6 +289,50 @@
                                 </button>
                             </div>
                             <p class="share-hint">Employees will only see the reveal page - not the setup steps</p>
+
+                            <div class="share-actions">
+                                <button class="btn btn-accent" id="downloadCsvBtn">
+                                    <span class="btn-icon">📥</span>
+                                    Download CSV
+                                </button>
+                                <button class="btn btn-secondary" id="viewDashboardBtn">
+                                    <span class="btn-icon">📊</span>
+                                    View Admin Dashboard
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Admin Dashboard (shows when View Dashboard clicked) -->
+                        <div class="admin-dashboard" id="adminDashboard" style="display: none;">
+                            <div class="dashboard-header">
+                                <h3>📊 Admin Dashboard - Assignments</h3>
+                                <p>View and edit all Secret Santa assignments</p>
+                            </div>
+                            <div class="assignments-table-container">
+                                <table class="assignments-table" id="assignmentsTable">
+                                    <thead>
+                                        <tr>
+                                            <th>Giver</th>
+                                            <th></th>
+                                            <th>Receiver</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="assignmentsTableBody">
+                                        <!-- Filled dynamically -->
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="dashboard-actions">
+                                <button class="btn btn-secondary" id="regenerateBtn">
+                                    <span class="btn-icon">🔄</span>
+                                    Regenerate All
+                                </button>
+                                <button class="btn btn-primary" id="hideDashboardBtn">
+                                    <span class="btn-icon">✅</span>
+                                    Done
+                                </button>
+                            </div>
                         </div>
                     </div>
                     <div class="card-footer">
@@ -369,7 +423,7 @@
                             <span class="revealed-hint">Sign out and sign in again if you need to verify</span>
                         </div>
                     </div>
-                    <div class="card-footer reveal-footer">
+                    <div class="card-footer reveal-footer" id="revealFooter">
                         <button class="btn btn-secondary" id="resetBtn">
                             <span class="btn-icon">🔄</span>
                             Start Over
