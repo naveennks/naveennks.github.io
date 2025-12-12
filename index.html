@@ -20,6 +20,227 @@
     .fade-in {
       animation: fadeIn 0.6s ease-out;
     }
+    body {
+      background-image: url('assets/background.jpg');
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+      background-repeat: no-repeat;
+    }
+    
+    /* Christmas Envelope Styles */
+    .envelope-container {
+      position: relative;
+      width: 400px;
+      max-width: 90%;
+      margin: 0 auto;
+      cursor: pointer;
+    }
+    
+    .envelope {
+      position: relative;
+      width: 100%;
+      height: 280px;
+      background: #dc2626;
+      border-radius: 12px;
+      box-shadow: 0 15px 40px rgba(220, 38, 38, 0.3);
+      transition: transform 0.3s ease;
+      overflow: visible;
+    }
+    
+    /* Candy cane striped borders on sides */
+    .envelope::before,
+    .envelope::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      width: 20px;
+      height: 100%;
+      background: repeating-linear-gradient(
+        180deg,
+        #dc2626 0px,
+        #dc2626 15px,
+        #ffffff 15px,
+        #ffffff 30px,
+        #22c55e 30px,
+        #22c55e 45px,
+        #ffffff 45px,
+        #ffffff 60px
+      );
+      border-radius: 12px;
+      z-index: 1;
+    }
+    
+    .envelope::before {
+      left: -10px;
+    }
+    
+    .envelope::after {
+      right: -10px;
+    }
+    
+    .envelope:hover {
+      transform: translateY(-15px) scale(1.02);
+    }
+    
+    .envelope-flap {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0;
+      height: 0;
+      border-left: 200px solid transparent;
+      border-right: 200px solid transparent;
+      border-top: 140px solid #b91c1c;
+      transform-origin: center 140px;
+      transition: transform 0.6s ease;
+      z-index: 5;
+      filter: drop-shadow(0 5px 10px rgba(0, 0, 0, 0.2));
+    }
+    
+    .envelope:hover .envelope-flap {
+      transform: translateX(-50%) rotateX(-180deg);
+    }
+    
+    .envelope-body {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 180px;
+      background: linear-gradient(180deg, #b91c1c 0%, #dc2626 100%);
+      border-radius: 0 0 12px 12px;
+      z-index: 2;
+    }
+    
+    /* Zigzag bottom edge */
+    .envelope-body::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 15px;
+      background: 
+        linear-gradient(135deg, transparent 33.33%, #dc2626 33.33%, #dc2626 66.66%, transparent 66.66%),
+        linear-gradient(-135deg, transparent 33.33%, #dc2626 33.33%, #dc2626 66.66%, transparent 66.66%);
+      background-size: 30px 15px;
+      background-position: 0 0, 15px 0;
+      background-repeat: repeat-x;
+    }
+    
+    .letter {
+      position: absolute;
+      width: 85%;
+      left: 7.5%;
+      bottom: 20px;
+      height: 220px;
+      background: linear-gradient(to bottom, #fef3c7 0%, #fde68a 100%);
+      border-radius: 8px;
+      box-shadow: 0 8px 25px rgba(0,0,0,0.25);
+      transition: all 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+      z-index: 4;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 30px 20px;
+      border: 3px solid #fbbf24;
+    }
+    
+    .envelope:hover .letter {
+      bottom: 160px;
+      transform: scale(1.05);
+      box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+    }
+    
+    .letter-content {
+      opacity: 0;
+      transform: scale(0.8);
+      transition: all 0.5s ease 0.3s;
+      text-align: center;
+      width: 100%;
+    }
+    
+    .envelope:hover .letter-content {
+      opacity: 1;
+      transform: scale(1);
+    }
+    
+    .letter-decoration {
+      position: absolute;
+      font-size: 2.5rem;
+      filter: drop-shadow(2px 2px 3px rgba(0,0,0,0.1));
+    }
+    
+    .letter-decoration.top-left { top: 15px; left: 15px; }
+    .letter-decoration.top-right { top: 15px; right: 15px; }
+    .letter-decoration.bottom-left { bottom: 15px; left: 15px; }
+    .letter-decoration.bottom-right { bottom: 15px; right: 15px; }
+    
+    .letter-message {
+      color: #dc2626;
+      font-weight: 600;
+      font-size: 1.1rem;
+      margin-bottom: 15px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    
+    .match-name-revealed {
+      font-size: 2.2rem;
+      font-weight: bold;
+      color: #b91c1c;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+      margin: 15px 0;
+      line-height: 1.2;
+      word-break: break-word;
+    }
+    
+    .envelope-instruction {
+      text-align: center;
+      margin-top: 25px;
+      color: #dc2626;
+      font-weight: 600;
+      font-size: 1rem;
+      animation: bounce 2s infinite;
+    }
+    
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+    
+    @media (max-width: 640px) {
+      .envelope-container {
+        width: 320px;
+      }
+      .envelope {
+        height: 240px;
+      }
+      .envelope-flap {
+        border-left: 160px solid transparent;
+        border-right: 160px solid transparent;
+        border-top: 110px solid #b91c1c;
+        transform-origin: center 110px;
+      }
+      .letter {
+        height: 190px;
+        padding: 20px 15px;
+      }
+      .match-name-revealed {
+        font-size: 1.6rem;
+      }
+      .letter-decoration {
+        font-size: 2rem;
+      }
+      .letter-message {
+        font-size: 0.9rem;
+      }
+    }
   </style>
 </head>
 <body class="bg-gray-100 min-h-screen">
@@ -30,9 +251,9 @@
     <div class="container mx-auto px-4 py-8 max-w-4xl">
     
     <!-- Header -->
-    <div class="bg-white rounded-3xl shadow-lg p-8 md:p-12 mb-6 fade-in">
+    <div class="bg-white rounded-3xl shadow-lg p-4 mb-6 fade-in">
       <div class="text-center">
-        <img src="logo.png" alt="WHITE Logo" class="h-10 md:h-12 mx-auto mb-6">
+        <img src="assets/logo.png" alt="WHITE Logo" style="height: 5rem;" class="mx-auto mb-6">
         <p class="text-gray-600 text-lg md:text-xl font-light">Create magical gift exchanges with ease</p>
       </div>
     </div>
@@ -42,12 +263,12 @@
       <div class="flex flex-wrap justify-center gap-6 md:gap-12 text-center">
         <div>
           <p class="text-green-800 font-semibold text-sm mb-1">📅 Event Date</p>
-          <p class="text-gray-800 text-lg font-bold">Saturday, January 3, 2026</p>
+          <p class="text-gray-800 text-lg font-bold event-date-display">Loading...</p>
         </div>
         <div class="border-l-2 border-green-300 hidden md:block"></div>
         <div>
           <p class="text-green-800 font-semibold text-sm mb-1">💰 Gift Budget</p>
-          <p class="text-gray-800 text-lg font-bold">₹1,000 - ₹1,500 INR</p>
+          <p class="text-gray-800 text-lg font-bold event-budget-display">Loading...</p>
         </div>
       </div>
     </div>
@@ -114,9 +335,9 @@
     <div class="container mx-auto px-4 py-8 max-w-4xl">
     
     <!-- Header -->
-    <div class="bg-white rounded-3xl shadow-lg p-8 md:p-12 mb-6 fade-in">
+    <div class="bg-white rounded-3xl shadow-lg p-4 mb-6 fade-in">
       <div class="text-center">
-        <img src="logo.png" alt="WHITE Logo" class="h-10 md:h-12 mx-auto mb-6">
+        <img src="assets/logo.png" alt="WHITE Logo" style="height: 5rem;" class="mx-auto mb-6">
         <p class="text-gray-600 text-lg md:text-xl font-light">Create magical gift exchanges with ease</p>
       </div>
     </div>
@@ -126,12 +347,12 @@
       <div class="flex flex-wrap justify-center gap-6 md:gap-12 text-center">
         <div>
           <p class="text-green-800 font-semibold text-sm mb-1">📅 Event Date</p>
-          <p class="text-gray-800 text-lg font-bold">Saturday, January 3, 2026</p>
+          <p class="text-gray-800 text-lg font-bold event-date-display">Loading...</p>
         </div>
         <div class="border-l-2 border-green-300 hidden md:block"></div>
         <div>
           <p class="text-green-800 font-semibold text-sm mb-1">💰 Gift Budget</p>
-          <p class="text-gray-800 text-lg font-bold">₹1,000 - ₹1,500 INR</p>
+          <p class="text-gray-800 text-lg font-bold event-budget-display">Loading...</p>
         </div>
       </div>
     </div>
@@ -147,11 +368,30 @@
       
       <!-- The Big Reveal -->
       <div class="bg-gradient-to-br from-orange-50 to-red-50 rounded-3xl p-10 mb-8 text-center border-2 border-orange-200">
-        <p class="text-gray-600 text-xl mb-4">You are the Secret Santa for</p>
-        <div class="text-5xl md:text-6xl font-bold text-orange-600 mb-4" id="matchName">
-          <!-- Match name will be inserted here -->
+        <p class="text-gray-600 text-xl mb-6">You are the Secret Santa for</p>
+        
+        <!-- Christmas Envelope -->
+        <div class="envelope-container">
+          <div class="envelope">
+            <div class="envelope-flap"></div>
+            <div class="envelope-body"></div>
+            <div class="letter">
+              <div class="letter-decoration top-left">🎄</div>
+              <div class="letter-decoration top-right">⭐</div>
+              <div class="letter-decoration bottom-left">🎁</div>
+              <div class="letter-decoration bottom-right">❄️</div>
+              <div class="letter-content">
+                <div class="letter-message">
+                  ✨ Make their holiday special! ✨
+                </div>
+                <div class="match-name-revealed" id="matchName">
+                  <!-- Match name will be inserted here -->
+                </div>
+              </div>
+            </div>
+          </div>
+          <p class="envelope-instruction">👆 Hover to open the envelope</p>
         </div>
-        <div class="text-5xl">🎁</div>
       </div>
       
       <!-- Wishlist Section -->
@@ -190,10 +430,40 @@
   </div>
 
   <!-- Load Scripts -->
-  <script src="firebase-config.js"></script>
-  <script src="app.js"></script>
+  <script src="js/firebase-config.js"></script>
+  <script src="js/app.js"></script>
   
   <script>
+    // ============================================================
+    // Load Event Details
+    // ============================================================
+    
+    async function loadEventDetails() {
+      try {
+        const event = await firebaseHelpers.getEvent();
+        if (event && event.eventDate) {
+          // Format date
+          const date = new Date(event.eventDate);
+          const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+          const formattedDate = date.toLocaleDateString('en-US', options);
+          
+          // Update all date displays
+          document.querySelectorAll('.event-date-display').forEach(el => {
+            el.textContent = formattedDate;
+          });
+          
+          // Update budget displays
+          if (event.minBudget && event.maxBudget) {
+            document.querySelectorAll('.event-budget-display').forEach(el => {
+              el.textContent = `₹${event.minBudget.toLocaleString()} - ₹${event.maxBudget.toLocaleString()} INR`;
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Error loading event details:', error);
+      }
+    }
+    
     // ============================================================
     // State Management with LocalStorage
     // ============================================================
@@ -202,6 +472,9 @@
     
     // Check if user has already revealed their match
     window.addEventListener('DOMContentLoaded', async () => {
+      // Load event details
+      await loadEventDetails();
+      
       const storedData = localStorage.getItem(STORAGE_KEY);
       
       if (storedData) {
@@ -330,6 +603,3 @@
   </script>
 </body>
 </html>
-
-
-

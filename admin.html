@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Secret Santa Admin Dashboard</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+  
+  <style>
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .fade-in {
+      animation: fadeIn 0.5s ease-out;
+    }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-red-50 via-white to-green-50 min-h-screen">
+  
+  <!-- Passcode Login Screen -->
+  <div id="passcodeScreen" class="min-h-screen flex items-center justify-center px-4">
+    <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full fade-in">
+      <div class="text-center mb-8">
+        <h1 class="text-4xl font-bold text-red-600 mb-2">🎅 Admin Dashboard</h1>
+        <p class="text-gray-600">Secret Santa Planner</p>
+      </div>
+      
+      <div id="passcodeError"></div>
+      
+      <form id="passcodeForm" class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Admin Passcode</label>
+          <input 
+            type="password" 
+            id="passcodeInput"
+            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+            placeholder="Enter passcode"
+            required
+          >
+        </div>
+        
+        <button 
+          type="submit"
+          class="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-3 rounded-lg transition duration-200"
+        >
+          Access Dashboard
+        </button>
+      </form>
+      
+      <div class="mt-6 text-center">
+        <a href="index.html" class="text-red-600 hover:underline text-sm">← Back to Participant Page</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Dashboard (Initially Hidden) -->
+  <div id="mainDashboard" class="hidden">
+    <div class="container mx-auto px-4 py-8 max-w-7xl">
+      
+      <!-- Header -->
+      <div class="bg-white rounded-2xl shadow-lg p-6 mb-6 fade-in">
+        <div class="flex justify-between items-center">
+          <div>
+            <h1 class="text-3xl font-bold text-red-600 mb-1">🎄 Secret Santa Admin</h1>
+            <p class="text-gray-600">Manage your Secret Santa event</p>
+          </div>
+          <button 
+            onclick="logout()"
+            class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-lg transition duration-200"
+          >
+            Logout
+          </button>
+        </div>
+      </div>
+
+      <!-- Event Setup -->
+      <div class="bg-white rounded-2xl shadow-lg p-6 mb-6 fade-in">
+        <h2 class="text-2xl font-bold text-gray-800 mb-4">📋 Event Setup</h2>
+        
+        <div id="eventSetupMessage"></div>
+        
+        <form id="eventSetupForm" class="space-y-4">
+          <div class="grid md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Organizer Name</label>
+              <input 
+                type="text" 
+                id="organizerName"
+                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                placeholder="Your name"
+                required
+              >
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Event ID</label>
+              <input 
+                type="text" 
+                id="eventId"
+                class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-100"
+                value="secretsanta2025"
+                readonly
+              >
+            </div>
+          </div>
+          
+          <div class="grid md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Event Date</label>
+              <input 
+                type="date" 
+                id="eventDate"
+                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                required
+              >
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Event Time (Optional)</label>
+              <input 
+                type="time" 
+                id="eventTime"
+                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+              >
+            </div>
+          </div>
+          
+          <div class="grid md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Minimum Budget (₹ INR)</label>
+              <input 
+                type="number" 
+                id="minBudget"
+                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                placeholder="1000"
+                min="0"
+                required
+              >
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Maximum Budget (₹ INR)</label>
+              <input 
+                type="number" 
+                id="maxBudget"
+                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                placeholder="1500"
+                min="0"
+                required
+              >
+            </div>
+          </div>
+          
+          <button 
+            type="submit"
+            class="bg-green-600 hover:bg-green-700 text-white font-semibold px-6 py-2 rounded-lg transition duration-200"
+          >
+            Save Event Settings
+          </button>
+        </form>
+      </div>
+
+      <!-- Import Participants -->
+      <div class="bg-white rounded-2xl shadow-lg p-6 mb-6 fade-in">
+        <h2 class="text-2xl font-bold text-gray-800 mb-4">📤 Import Participants</h2>
+        
+        <div id="importMessage"></div>
+        
+        <div class="space-y-4">
+          <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <p class="text-blue-800 text-sm mb-2"><strong>CSV Format:</strong> name, email, wishlist, exclusions</p>
+            <p class="text-blue-700 text-xs">Example: John Doe, john@example.com, books, jane@example.com</p>
+            <p class="text-blue-700 text-xs mt-1">Note: Exclusions should be comma-separated emails (optional)</p>
+          </div>
+          
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Upload CSV File</label>
+            <input 
+              type="file" 
+              id="csvFileInput"
+              accept=".csv"
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+            >
+          </div>
+          
+          <button 
+            onclick="importParticipants()"
+            class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2 rounded-lg transition duration-200"
+          >
+            Import from CSV
+          </button>
+        </div>
+      </div>
+
+      <!-- Add Participant -->
+      <div class="bg-white rounded-2xl shadow-lg p-6 mb-6 fade-in">
+        <h2 class="text-2xl font-bold text-gray-800 mb-4">➕ Add Participant</h2>
+        
+        <div id="addParticipantMessage"></div>
+        
+        <form id="addParticipantForm" class="space-y-4">
+          <div class="grid md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Name *</label>
+              <input 
+                type="text" 
+                id="participantName"
+                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                placeholder="John Doe"
+                required
+              >
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Email *</label>
+              <input 
+                type="email" 
+                id="participantEmail"
+                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                placeholder="john@example.com"
+                required
+              >
+            </div>
+          </div>
+          
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Wishlist (Optional)</label>
+            <textarea 
+              id="participantWishlist"
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+              rows="2"
+              placeholder="Books, gadgets, gift cards..."
+            ></textarea>
+          </div>
+          
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              Exclusions (Emails they cannot be matched with)
+            </label>
+            <input 
+              type="text" 
+              id="participantExclusions"
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+              placeholder="jane@example.com, bob@example.com (comma-separated)"
+            >
+            <p class="text-xs text-gray-500 mt-1">Separate multiple emails with commas</p>
+          </div>
+          
+          <button 
+            type="submit"
+            class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2 rounded-lg transition duration-200"
+          >
+            Add Participant
+          </button>
+        </form>
+      </div>
+
+      <!-- Participants List -->
+      <div class="bg-white rounded-2xl shadow-lg p-6 mb-6 fade-in">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-2xl font-bold text-gray-800">👥 Participants</h2>
+          <button 
+            onclick="loadParticipants()"
+            class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-lg transition duration-200 text-sm"
+          >
+            🔄 Refresh
+          </button>
+        </div>
+        
+        <div id="participantsLoading"></div>
+        <div id="participantsList"></div>
+      </div>
+
+      <!-- Matching Controls -->
+      <div class="bg-white rounded-2xl shadow-lg p-6 mb-6 fade-in">
+        <h2 class="text-2xl font-bold text-gray-800 mb-4">🎲 Run Matching Algorithm</h2>
+        
+        <div id="matchingMessage"></div>
+        
+        <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4">
+          <p class="text-yellow-800 font-medium">⚠️ Warning</p>
+          <p class="text-yellow-700 text-sm">This will assign Secret Santa matches to all participants. Make sure all participants are added before running this.</p>
+        </div>
+        
+        <button 
+          onclick="runMatching()"
+          id="runMatchingBtn"
+          class="bg-red-600 hover:bg-red-700 text-white font-semibold px-8 py-3 rounded-lg transition duration-200 text-lg"
+        >
+          🎁 Run Matching Algorithm
+        </button>
+      </div>
+
+      <!-- Status Board -->
+      <div class="bg-white rounded-2xl shadow-lg p-6 fade-in">
+        <h2 class="text-2xl font-bold text-gray-800 mb-4">📊 Reveal Status</h2>
+        <div id="statusBoard"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Load Scripts -->
+  <script src="js/firebase-config.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/admin.js"></script>
+</body>
+</html>
