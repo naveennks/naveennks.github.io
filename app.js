@@ -158,7 +158,6 @@ const firebaseHelpers = {
         eventId: EVENT_ID,
         name: participantData.name,
         email: participantData.email.toLowerCase(),
-        exclusions: participantData.exclusions || [],
         match_name: null,
         match_email: null,
         is_revealed: false,

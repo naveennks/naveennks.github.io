@@ -112,19 +112,12 @@ document.getElementById('addParticipantForm').addEventListener('submit', async (
   const name = document.getElementById('participantName').value.trim();
   const email = document.getElementById('participantEmail').value.trim();
   const wishlist = document.getElementById('participantWishlist').value.trim();
-  const exclusionsInput = document.getElementById('participantExclusions').value.trim();
   
   // Validate email
   if (!utils.isValidEmail(email)) {
     utils.showError('Please enter a valid email address.', 'addParticipantMessage');
     return;
   }
-  
-  // Parse exclusions
-  const exclusions = exclusionsInput
-    .split(',')
-    .map(e => e.trim().toLowerCase())
-    .filter(e => e.length > 0);
   
   try {
     // Check if email already exists
@@ -138,8 +131,7 @@ document.getElementById('addParticipantForm').addEventListener('submit', async (
     await firebaseHelpers.addParticipant({
       name,
       email,
-      wishlist,
-      exclusions
+      wishlist
     });
     
     utils.showSuccess(`${name} added successfully!`, 'addParticipantMessage');
@@ -202,12 +194,6 @@ function displayParticipants() {
             ${participant.wishlist ? `
               <p class="text-sm text-gray-500 mt-1">
                 <span class="font-medium">Wishlist:</span> ${utils.sanitize(participant.wishlist)}
-              </p>
-            ` : ''}
-            
-            ${participant.exclusions && participant.exclusions.length > 0 ? `
-              <p class="text-xs text-orange-600 mt-1">
-                <span class="font-medium">Exclusions:</span> ${participant.exclusions.join(', ')}
               </p>
             ` : ''}
             
@@ -280,7 +266,7 @@ async function runMatching() {
     const matches = generateMatches(participants);
     
     if (!matches) {
-      utils.showError('Failed to generate valid matches. Please check exclusions and try again.', 'matchingMessage');
+      utils.showError('Failed to generate valid matches. Please try again.', 'matchingMessage');
       btn.disabled = false;
       btn.textContent = '🎁 Run Matching Algorithm';
       return;
@@ -309,7 +295,7 @@ async function runMatching() {
 
 /**
  * Generate Secret Santa matches
- * Uses a backtracking algorithm to respect exclusions
+ * Uses a simple shuffle algorithm to randomly assign matches
  */
 function generateMatches(participants) {
   const maxAttempts = 1000;
@@ -333,11 +319,10 @@ function generateMatches(participants) {
       for (let j = 0; j < receivers.length; j++) {
         const receiver = receivers[j];
         
-        // Check if valid match
+        // Check if valid match (not matching to self)
         if (
           !used.has(receiver.id) &&
-          receiver.id !== giver.id &&
-          !giver.exclusions.includes(receiver.email)
+          receiver.id !== giver.id
         ) {
           matches.push({
             id: giver.id,
@@ -466,35 +451,77 @@ async function importParticipants() {
   reader.onload = async (e) => {
     try {
       const csvContent = e.target.result;
-      const lines = csvContent.split('\n').filter(line => line.trim() !== '');
+      // Handle different line endings (CRLF, LF, CR)
+      const lines = csvContent.split(/\r?\n/).filter(line => line.trim() !== '');
       
       let successCount = 0;
       let errorCount = 0;
       const errors = [];
+      let startIndex = 0;
       
-      for (let i = 0; i < lines.length; i++) {
+      // Check if first line is a header (contains "name" or "email" in first two fields)
+      if (lines.length > 0) {
+        const firstLine = lines[0].toLowerCase().trim();
+        if (firstLine.includes('name') && (firstLine.includes('email') || firstLine.includes('e-mail'))) {
+          startIndex = 1; // Skip header row
+        }
+      }
+      
+      for (let i = startIndex; i < lines.length; i++) {
         const line = lines[i].trim();
         if (!line) continue;
         
-        // Parse CSV line (handle commas within quotes)
-        const parts = line.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g);
+        // Remove any BOM (Byte Order Mark) characters
+        const cleanLine = line.replace(/^\uFEFF/, '');
         
-        if (!parts || parts.length < 2) {
-          errors.push(`Line ${i + 1}: Invalid format`);
+        // Try robust CSV parsing with multiple fallback strategies
+        let parts = [];
+        
+        // Strategy 1: Handle proper CSV with quoted fields
+        if (cleanLine.includes('"')) {
+          let current = '';
+          let inQuotes = false;
+          
+          for (let j = 0; j < cleanLine.length; j++) {
+            const char = cleanLine[j];
+            const nextChar = j < cleanLine.length - 1 ? cleanLine[j + 1] : null;
+            
+            if (char === '"' && nextChar === '"') {
+              // Escaped quote (two consecutive quotes)
+              current += '"';
+              j++; // Skip next quote
+            } else if (char === '"') {
+              // Toggle quote state
+              inQuotes = !inQuotes;
+            } else if (char === ',' && !inQuotes) {
+              parts.push(current);
+              current = '';
+            } else {
+              current += char;
+            }
+          }
+          parts.push(current);
+        } else {
+          // Strategy 2: Simple comma split for non-quoted CSV
+          parts = cleanLine.split(',');
+        }
+        
+        // Clean up all parts: remove quotes, trim whitespace
+        const cleanedParts = parts.map(part => {
+          return part
+            .replace(/^["'\s]+|["'\s]+$/g, '') // Remove leading/trailing quotes and spaces
+            .trim();
+        }).filter(part => part.length > 0); // Only keep non-empty parts
+        
+        if (cleanedParts.length < 2) {
+          errors.push(`Line ${i + 1}: Invalid format - found ${cleanedParts.length} field(s), need at least name and email. Raw content: "${cleanLine.substring(0, 100)}"`);
           errorCount++;
           continue;
         }
         
-        const name = parts[0].replace(/"/g, '').trim();
-        const email = parts[1].replace(/"/g, '').trim();
-        const wishlist = parts.length > 2 ? parts[2].replace(/"/g, '').trim() : '';
-        const exclusionsStr = parts.length > 3 ? parts[3].replace(/"/g, '').trim() : '';
-        
-        // Parse exclusions (semicolon or pipe separated within the field)
-        const exclusions = exclusionsStr
-          .split(/[;|]/)
-          .map(e => e.trim().toLowerCase())
-          .filter(e => e.length > 0 && utils.isValidEmail(e));
+        const name = cleanedParts[0];
+        const email = cleanedParts[1];
+        const wishlist = cleanedParts.length > 2 ? cleanedParts[2] : '';
         
         if (!name || !email) {
           errors.push(`Line ${i + 1}: Name and email are required`);
@@ -521,8 +548,7 @@ async function importParticipants() {
           await firebaseHelpers.addParticipant({
             name,
             email,
-            wishlist,
-            exclusions
+            wishlist
           });
           
           successCount++;
