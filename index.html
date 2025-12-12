@@ -1,489 +1,332 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description"
-        content="Secret Santa Planner - Organize your gift exchange with smart matching, exclusion rules, and beautiful reveals">
-    <title>🎄 Secret Santa Planner</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap"
-        rel="stylesheet">
-    <link rel="stylesheet" href="index.css">
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Secret Santa - Find Your Match</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+  
+  <style>
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .fade-in {
+      animation: fadeIn 0.6s ease-out;
+    }
+  </style>
 </head>
-
-<body>
-    <!-- Snowfall Background -->
-    <div class="snowfall" id="snowfall"></div>
-
-    <!-- Confetti Container -->
-    <div class="confetti-container" id="confetti"></div>
-
-    <!-- Christmas Decorations at Bottom -->
-    <!-- <div class="christmas-decorations">
-        <div class="snow-ground"></div>
-        <span class="decoration decoration-santa">❄️</span>
-        <span class="decoration decoration-snowman">⛄</span>
-        <span class="decoration decoration-gift1">🎁</span>
-        <span class="decoration decoration-tree">🎄</span>
-        <span class="decoration decoration-gift2">🎁</span>
-        <span class="decoration decoration-gift3">🎁</span>
-        <span class="decoration decoration-snowman2">☃️</span>
-        <span class="decoration decoration-deer">🦌</span>
-    </div> -->
-
-    <!-- Main Application -->
-    <div class="app-container">
-        <!-- Header -->
-        <header class="app-header">
-            <div class="logo">
-                <img src="images/logo.png" alt="WHITE" class="logo-image">
-            </div>
-            <p class="tagline">Create magical gift exchanges with ease</p>
-        </header>
-
-        <!-- Progress Steps -->
-        <nav class="progress-nav">
-            <div class="progress-track">
-                <div class="progress-fill" id="progressFill"></div>
-            </div>
-            <div class="progress-steps">
-                <button class="step-btn active" data-step="1">
-                    <span class="step-icon">🎄</span>
-                    <span class="step-label">Setup</span>
-                </button>
-                <button class="step-btn" data-step="2">
-                    <span class="step-icon">👥</span>
-                    <span class="step-label">Participants</span>
-                </button>
-                <button class="step-btn" data-step="3">
-                    <span class="step-icon">🚫</span>
-                    <span class="step-label">Exclusions</span>
-                </button>
-                <button class="step-btn" data-step="4">
-                    <span class="step-icon">🎲</span>
-                    <span class="step-label">Generate</span>
-                </button>
-                <button class="step-btn" data-step="5">
-                    <span class="step-icon">🎁</span>
-                    <span class="step-label">Reveal</span>
-                </button>
-            </div>
-        </nav>
-
-        <!-- Main Content Area -->
-        <main class="main-content">
-            <!-- Step 1: Setup -->
-            <section class="step-panel active" id="step1">
-                <div class="panel-card">
-                    <div class="card-header">
-                        <h2>🎄 Event Setup</h2>
-                        <p>Configure your Secret Santa exchange details</p>
-                    </div>
-                    <div class="card-body">
-                        <div class="form-group">
-                            <label for="eventName">Event Name</label>
-                            <input type="text" id="eventName" placeholder="Office Holiday Party 2024"
-                                class="input-field">
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="eventDate">Exchange Date</label>
-                                <input type="date" id="eventDate" class="input-field">
-                            </div>
-                            <div class="form-group">
-                                <label for="budget">Budget Limit</label>
-                                <div class="input-with-icon">
-                                    <span class="input-icon">$</span>
-                                    <input type="number" id="budget" placeholder="25" min="0"
-                                        class="input-field has-icon">
-                                </div>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label for="eventMessage">Welcome Message (Optional)</label>
-                            <textarea id="eventMessage" placeholder="Write a festive message for participants..."
-                                class="input-field textarea" rows="3"></textarea>
-                        </div>
-                    </div>
-                    <div class="card-footer">
-                        <button class="btn btn-primary btn-next" data-next="2">
-                            Add Participants
-                            <span class="btn-icon">→</span>
-                        </button>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Step 2: Participants -->
-            <section class="step-panel" id="step2">
-                <div class="panel-card">
-                    <div class="card-header">
-                        <div class="header-with-action">
-                            <div>
-                                <h2>👥 Participants</h2>
-                                <p>Add everyone who will join the gift exchange</p>
-                            </div>
-                            <div class="header-actions">
-                                <input type="file" id="importCsvFile" accept=".csv,.json" style="display: none;">
-                                <button class="btn btn-secondary btn-sm" id="importCsvBtn">
-                                    <span class="btn-icon">📥</span>
-                                    Import CSV
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="card-body">
-                        <div class="add-participant-form">
-                            <div class="form-row compact">
-                                <div class="form-group flex-2">
-                                    <input type="text" id="participantName" placeholder="Name" class="input-field">
-                                </div>
-                                <div class="form-group flex-2">
-                                    <input type="email" id="participantEmail" placeholder="Email (optional)"
-                                        class="input-field">
-                                </div>
-                                <button class="btn btn-accent btn-add" id="addParticipantBtn">
-                                    <span>+</span> Add
-                                </button>
-                            </div>
-                            <div class="form-group">
-                                <input type="text" id="participantWishlist"
-                                    placeholder="Wishlist / Gift ideas (optional)" class="input-field">
-                            </div>
-                        </div>
-
-                        <div class="participants-list" id="participantsList" role="list" aria-live="polite" aria-label="Participants list">
-                            <div class="empty-state" id="emptyParticipants">
-                                <span class="empty-icon" aria-hidden="true">👥</span>
-                                <p>No participants yet</p>
-                                <span class="empty-hint">Add at least 3 people to get started</span>
-                            </div>
-                        </div>
-
-                        <div class="participant-count">
-                            <span id="participantCount">0</span> participants added
-                        </div>
-                    </div>
-                    <div class="card-footer">
-                        <button class="btn btn-secondary btn-prev" data-prev="1">
-                            <span class="btn-icon">←</span>
-                            Back
-                        </button>
-                        <button class="btn btn-primary btn-next" data-next="3" id="toExclusionsBtn">
-                            Set Exclusions
-                            <span class="btn-icon">→</span>
-                        </button>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Step 3: Exclusions -->
-            <section class="step-panel" id="step3">
-                <div class="panel-card">
-                    <div class="card-header">
-                        <h2>🚫 Exclusion Rules</h2>
-                        <p>Define who shouldn't be paired together (couples, family, etc.)</p>
-                    </div>
-                    <div class="card-body">
-                        <div class="add-exclusion-form">
-                            <div class="form-row compact align-center">
-                                <div class="form-group flex-2">
-                                    <select id="exclusionPerson1" class="input-field select-field">
-                                        <option value="">Select person...</option>
-                                    </select>
-                                </div>
-                                <span class="exclusion-arrow">↔️</span>
-                                <div class="form-group flex-2">
-                                    <select id="exclusionPerson2" class="input-field select-field">
-                                        <option value="">Select person...</option>
-                                    </select>
-                                </div>
-                                <button class="btn btn-accent btn-add" id="addExclusionBtn">
-                                    <span>+</span> Add
-                                </button>
-                            </div>
-                        </div>
-
-                        <div class="exclusions-list" id="exclusionsList">
-                            <div class="empty-state" id="emptyExclusions">
-                                <span class="empty-icon">✓</span>
-                                <p>No exclusions set</p>
-                                <span class="empty-hint">Anyone can be matched with anyone</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="card-footer">
-                        <button class="btn btn-secondary btn-prev" data-prev="2">
-                            <span class="btn-icon">←</span>
-                            Back
-                        </button>
-                        <button class="btn btn-primary btn-next" data-next="4">
-                            Ready to Generate
-                            <span class="btn-icon">→</span>
-                        </button>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Step 4: Generate -->
-            <section class="step-panel" id="step4">
-                <div class="panel-card generate-card">
-                    <div class="card-header">
-                        <h2>🎲 Generate Assignments</h2>
-                        <p>Time for the magic! Click below to create your Secret Santa pairs</p>
-                    </div>
-                    <div class="card-body generate-body">
-                        <div class="generate-summary">
-                            <div class="summary-item">
-                                <span class="summary-icon">👥</span>
-                                <span class="summary-value" id="summaryParticipants">0</span>
-                                <span class="summary-label">Participants</span>
-                            </div>
-                            <div class="summary-item">
-                                <span class="summary-icon">🚫</span>
-                                <span class="summary-value" id="summaryExclusions">0</span>
-                                <span class="summary-label">Exclusions</span>
-                            </div>
-                            <div class="summary-item">
-                                <span class="summary-icon">💰</span>
-                                <span class="summary-value" id="summaryBudget">$0</span>
-                                <span class="summary-label">Budget</span>
-                            </div>
-                        </div>
-
-                        <div class="generate-animation" id="generateAnimation">
-                            <div class="gift-box">🎁</div>
-                        </div>
-
-                        <button class="btn btn-generate" id="generateBtn">
-                            <span class="btn-sparkle">✨</span>
-                            Generate Assignments
-                            <span class="btn-sparkle">✨</span>
-                        </button>
-
-                        <p class="generate-note">
-                            <strong>Note:</strong> Each person will give one gift and receive one gift.
-                            Exclusion rules will be respected.
-                        </p>
-
-                        <!-- Shareable Link Section (shows after generation) -->
-                        <div class="shareable-link-section" id="shareableLinkSection" style="display: none;">
-                            <div class="share-success">
-                                <span class="share-icon">✅</span>
-                                <h3>Assignments Generated!</h3>
-                                <p>Share this link with employees so they can reveal their match:</p>
-                            </div>
-                            <div class="share-link-container">
-                                <input type="text" id="shareableLink" class="input-field" readonly>
-                                <button class="btn btn-primary" id="copyLinkBtn">
-                                    <span class="btn-icon">📋</span>
-                                    Copy Link
-                                </button>
-                            </div>
-                            <p class="share-hint">Employees will only see the reveal page - not the setup steps</p>
-
-                            <div class="share-actions">
-                                <button class="btn btn-accent" id="downloadCsvBtn">
-                                    <span class="btn-icon">📥</span>
-                                    Download CSV
-                                </button>
-                                <button class="btn btn-secondary" id="viewDashboardBtn">
-                                    <span class="btn-icon">📊</span>
-                                    View Admin Dashboard
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- Admin Dashboard (shows when View Dashboard clicked) -->
-                        <div class="admin-dashboard" id="adminDashboard" style="display: none;">
-                            <div class="dashboard-header">
-                                <h3>📊 Admin Dashboard - Assignments</h3>
-                                <p>View and edit all Secret Santa assignments</p>
-                            </div>
-                            <div class="assignments-table-container">
-                                <table class="assignments-table" id="assignmentsTable">
-                                    <thead>
-                                        <tr>
-                                            <th>Giver</th>
-                                            <th></th>
-                                            <th>Receiver</th>
-                                            <th>Action</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="assignmentsTableBody">
-                                        <!-- Filled dynamically -->
-                                    </tbody>
-                                </table>
-                            </div>
-                            <div class="dashboard-actions">
-                                <button class="btn btn-secondary" id="regenerateBtn">
-                                    <span class="btn-icon">🔄</span>
-                                    Regenerate All
-                                </button>
-                                <button class="btn btn-primary" id="hideDashboardBtn">
-                                    <span class="btn-icon">✅</span>
-                                    Done
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="card-footer">
-                        <button class="btn btn-secondary btn-prev" data-prev="3">
-                            <span class="btn-icon">←</span>
-                            Back
-                        </button>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Step 5: Reveal -->
-            <section class="step-panel" id="step5">
-                <div class="panel-card reveal-card">
-                    <div class="card-header">
-                        <h2>🎁 Reveal Your Match</h2>
-                        <p>Select your name to see who you're getting a gift for!</p>
-                    </div>
-                    <div class="card-body">
-                        <div class="event-banner" id="eventBanner">
-                            <h3 id="revealEventName">Secret Santa 2024</h3>
-                            <p id="revealEventDate"></p>
-                            <p id="revealEventMessage" class="event-message"></p>
-                        </div>
-
-                        <!-- Email Reveal Section -->
-                        <div class="email-reveal-section" id="emailRevealSection">
-                            <div class="signin-prompt">
-                                <span class="signin-icon">🎁</span>
-                                <h3>Enter your email to reveal your match</h3>
-                                <p>Use the email you were registered with</p>
-                            </div>
-                            <div class="email-form">
-                                <input type="email" id="revealEmail" class="input-field"
-                                    placeholder="your.email@example.com">
-                                <button class="btn btn-primary" id="revealEmailBtn">
-                                    <span class="btn-icon">🔓</span>
-                                    Reveal My Match
-                                </button>
-                            </div>
-                            <p class="email-hint">Your assignment will be fetched securely from the server</p>
-                        </div>
-
-                        <!-- Loading State -->
-                        <div class="loading-section" id="loadingSection" style="display: none;">
-                            <div class="loading-spinner"></div>
-                            <p>Finding your match...</p>
-                        </div>
-
-                        <!-- Not Found Message -->
-                        <div class="not-found-section" id="notFoundSection" style="display: none;">
-                            <span class="failed-icon">❌</span>
-                            <p>Email not found!</p>
-                            <span class="failed-details" id="notFoundDetails"></span>
-                            <button class="btn btn-secondary" id="tryAgainBtn">
-                                <span class="btn-icon">🔄</span>
-                                Try Again
-                            </button>
-                        </div>
-
-                        <!-- Single Reveal Card Container -->
-                        <div class="single-reveal-container" id="singleRevealContainer" style="display: none;">
-                            <div class="verified-badge">
-                                <span>✅ Verified as <strong id="verifiedName"></strong></span>
-                            </div>
-                            <div class="reveal-card-large" id="revealCardLarge">
-                                <div class="reveal-card-inner-large">
-                                    <div class="reveal-card-front-large">
-                                        <span class="large-gift-icon">🎁</span>
-                                        <span class="reveal-card-name-large" id="revealForName">Your Name</span>
-                                        <span class="reveal-card-hint-large">Click to reveal your match!</span>
-                                    </div>
-                                    <div class="reveal-card-back-large">
-                                        <span class="large-santa-icon">⭐</span>
-                                        <span class="reveal-card-label-large">You're getting a gift for:</span>
-                                        <span class="reveal-card-match-large" id="revealMatchName">Match Name</span>
-                                        <span class="reveal-card-wishlist-large" id="revealMatchWishlist"></span>
-                                        <span class="reveal-card-budget-large" id="revealMatchBudget"></span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Already Revealed Message -->
-                        <div class="already-revealed" id="alreadyRevealed" style="display: none;">
-                            <span class="revealed-icon">✅</span>
-                            <p>You've already seen your match!</p>
-                            <span class="revealed-hint">Sign out and sign in again if you need to verify</span>
-                        </div>
-                    </div>
-                    <div class="card-footer reveal-footer" id="revealFooter">
-                        <button class="btn btn-secondary" id="resetBtn">
-                            <span class="btn-icon">🔄</span>
-                            Start Over
-                        </button>
-                        <button class="btn btn-primary" id="exportBtn">
-                            <span class="btn-icon">📤</span>
-                            Organizer Export
-                        </button>
-                    </div>
-                </div>
-            </section>
-        </main>
-
-        <!-- Toast Notification -->
-        <div class="toast-container" id="toastContainer"></div>
+<body class="bg-gray-100 min-h-screen">
+  
+  <!-- Email Entry Screen -->
+  <div id="emailScreen">
+    
+    <div class="container mx-auto px-4 py-8 max-w-4xl">
+    
+    <!-- Header -->
+    <div class="bg-white rounded-3xl shadow-lg p-8 md:p-12 mb-6 fade-in">
+      <div class="text-center">
+        <img src="assets/logo.png" alt="WHITE Logo" class="h-10 md:h-12 mx-auto mb-6">
+        <p class="text-gray-600 text-lg md:text-xl font-light">Create magical gift exchanges with ease</p>
+      </div>
     </div>
-
-    <!-- Export Modal -->
-    <div class="modal-overlay" id="exportModal">
-        <div class="modal">
-            <div class="modal-header">
-                <h3>📤 Export Options</h3>
-                <button class="modal-close" id="closeExportModal">&times;</button>
-            </div>
-            <div class="modal-body">
-                <button class="export-option" id="exportJSON">
-                    <span class="export-icon">📄</span>
-                    <div class="export-info">
-                        <strong>Download JSON</strong>
-                        <span>Save all data to a file</span>
-                    </div>
-                </button>
-                <button class="export-option" id="copyAssignments">
-                    <span class="export-icon">📋</span>
-                    <div class="export-info">
-                        <strong>Copy Assignments</strong>
-                        <span>Copy list to clipboard</span>
-                    </div>
-                </button>
-                <button class="export-option" id="printCards">
-                    <span class="export-icon">🖨️</span>
-                    <div class="export-info">
-                        <strong>Print Cards</strong>
-                        <span>Print reveal cards</span>
-                    </div>
-                </button>
-            </div>
-            <div class="modal-footer">
-                <div class="import-section">
-                    <label for="importFile" class="btn btn-secondary btn-import">
-                        <span class="btn-icon">📥</span>
-                        Import Data
-                    </label>
-                    <input type="file" id="importFile" accept=".json" hidden>
-                </div>
-            </div>
+    
+    <!-- Event Details -->
+    <div class="bg-gradient-to-r from-green-50 to-emerald-50 rounded-3xl shadow-lg p-6 mb-6 border-2 border-green-200 fade-in">
+      <div class="flex flex-wrap justify-center gap-6 md:gap-12 text-center">
+        <div>
+          <p class="text-green-800 font-semibold text-sm mb-1">📅 Event Date</p>
+          <p class="text-gray-800 text-lg font-bold">Saturday, January 3, 2026</p>
         </div>
+        <div class="border-l-2 border-green-300 hidden md:block"></div>
+        <div>
+          <p class="text-green-800 font-semibold text-sm mb-1">💰 Gift Budget</p>
+          <p class="text-gray-800 text-lg font-bold">₹1,000 - ₹1,500 INR</p>
+        </div>
+      </div>
     </div>
+    
+    <!-- Reveal Your Match Card -->
+    <div class="bg-white rounded-3xl shadow-lg p-8 mb-6 fade-in">
+      <div class="text-center">
+        <h2 class="text-3xl font-bold text-orange-600 mb-3 flex items-center justify-center gap-3">
+          <span class="text-4xl">🎁</span>
+          <span>Reveal Your Match</span>
+        </h2>
+        <p class="text-gray-600 text-lg">Select your name to see who you're getting a gift for!</p>
+      </div>
+    </div>
+    
+    <!-- Message Area -->
+    <div id="messageArea"></div>
+    
+    <!-- Email Entry Card -->
+    <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-3xl shadow-lg p-10 fade-in">
+      <div class="text-center mb-8">
+        <div class="text-6xl mb-4">🎁</div>
+        <h3 class="text-2xl font-bold text-gray-800 mb-2">Enter your email to reveal your match</h3>
+        <p class="text-gray-600">Use the email you were registered with</p>
+      </div>
+      
+      <!-- Email Form -->
+      <form id="emailForm" class="max-w-md mx-auto">
+        <div class="mb-6">
+          <input 
+            type="email" 
+            id="emailInput"
+            class="w-full px-6 py-4 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-red-500 focus:border-transparent text-center text-gray-600 bg-white"
+            placeholder="your.email@example.com"
+            required
+          >
+        </div>
+        
+        <button 
+          type="submit"
+          class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-4 rounded-2xl transition duration-200 text-lg shadow-md hover:shadow-lg flex items-center justify-center gap-2"
+        >
+          <span>🎁</span>
+          <span>Reveal My Match</span>
+        </button>
+        
+        <p class="text-center text-gray-500 text-sm mt-6">Your assignment will be fetched securely from the server</p>
+      </form>
+    </div>
+    
+    <!-- Admin Link -->
+    <div class="mt-6 text-center">
+      <a href="admin.html" class="text-gray-500 hover:text-gray-700 text-sm">
+        🔒 Admin Dashboard
+      </a>
+    </div>
+    
+    </div>
+  </div>
 
-    <script src="app.js"></script>
+  <!-- Match Reveal Screen (Initially Hidden) -->
+  <div id="matchScreen" class="hidden">
+    
+    <div class="container mx-auto px-4 py-8 max-w-4xl">
+    
+    <!-- Header -->
+    <div class="bg-white rounded-3xl shadow-lg p-8 md:p-12 mb-6 fade-in">
+      <div class="text-center">
+        <img src="assets/logo.png" alt="WHITE Logo" class="h-10 md:h-12 mx-auto mb-6">
+        <p class="text-gray-600 text-lg md:text-xl font-light">Create magical gift exchanges with ease</p>
+      </div>
+    </div>
+    
+    <!-- Event Details -->
+    <div class="bg-gradient-to-r from-green-50 to-emerald-50 rounded-3xl shadow-lg p-6 mb-6 border-2 border-green-200 fade-in">
+      <div class="flex flex-wrap justify-center gap-6 md:gap-12 text-center">
+        <div>
+          <p class="text-green-800 font-semibold text-sm mb-1">📅 Event Date</p>
+          <p class="text-gray-800 text-lg font-bold">Saturday, January 3, 2026</p>
+        </div>
+        <div class="border-l-2 border-green-300 hidden md:block"></div>
+        <div>
+          <p class="text-green-800 font-semibold text-sm mb-1">💰 Gift Budget</p>
+          <p class="text-gray-800 text-lg font-bold">₹1,000 - ₹1,500 INR</p>
+        </div>
+      </div>
+    </div>
+      
+      <!-- Greeting -->
+      <div class="text-center mb-8">
+        <div class="text-5xl mb-4">✨</div>
+        <h2 class="text-3xl font-bold text-gray-800 mb-2">
+          Hello, <span id="participantName" class="text-orange-600"></span>!
+        </h2>
+        <p class="text-gray-600 text-lg">Your Secret Santa match has been revealed</p>
+      </div>
+      
+      <!-- The Big Reveal -->
+      <div class="bg-gradient-to-br from-orange-50 to-red-50 rounded-3xl p-10 mb-8 text-center border-2 border-orange-200">
+        <p class="text-gray-600 text-xl mb-4">You are the Secret Santa for</p>
+        <div class="text-5xl md:text-6xl font-bold text-orange-600 mb-4" id="matchName">
+          <!-- Match name will be inserted here -->
+        </div>
+        <div class="text-5xl">🎁</div>
+      </div>
+      
+      <!-- Wishlist Section -->
+      <div id="wishlistSection" class="hidden bg-blue-50 rounded-3xl p-8 mb-8 border border-blue-200">
+        <h3 class="text-2xl font-bold text-gray-800 mb-4 text-center flex items-center justify-center gap-2">
+          <span class="text-3xl">📝</span> 
+          <span>Their Wishlist</span>
+        </h3>
+        <p id="wishlistContent" class="text-gray-700 text-lg text-center"></p>
+      </div>
+      
+      <!-- Important Reminders -->
+      <div class="space-y-4 mb-6">
+        <div class="bg-yellow-50 border-l-4 border-yellow-400 p-5 rounded-r-xl">
+          <p class="text-yellow-900 font-bold mb-1">🤫 Keep it Secret!</p>
+          <p class="text-yellow-800 text-sm">Don't tell anyone who you got. That's the fun of Secret Santa!</p>
+        </div>
+        
+        <div class="bg-green-50 border-l-4 border-green-400 p-5 rounded-r-xl">
+          <p class="text-green-900 font-bold mb-2">🎄 Important Notes</p>
+          <ul class="text-green-800 text-sm space-y-1">
+            <li>• This page will remain accessible - bookmark it if needed</li>
+            <li>• Check with your organizer for gift budget and exchange date</li>
+            <li>• Have fun and spread the holiday cheer!</li>
+          </ul>
+        </div>
+      </div>
+      
+      <!-- Confirmation Message -->
+      <div class="text-center pt-6 border-t border-gray-200">
+        <p class="text-gray-500 text-sm">Your assignment has been saved securely</p>
+      </div>
+      
+    </div>
+    </div>
+  </div>
+
+  <!-- Load Scripts -->
+  <script src="js/firebase-config.js"></script>
+  <script src="js/app.js"></script>
+  
+  <script>
+    // ============================================================
+    // State Management with LocalStorage
+    // ============================================================
+    
+    const STORAGE_KEY = 'secretSantaMatch';
+    
+    // Check if user has already revealed their match
+    window.addEventListener('DOMContentLoaded', async () => {
+      const storedData = localStorage.getItem(STORAGE_KEY);
+      
+      if (storedData) {
+        try {
+          const data = JSON.parse(storedData);
+          // Auto-show the match if they've already revealed it
+          await showMatchDirectly(data.email);
+        } catch (error) {
+          console.error('Error loading stored data:', error);
+          localStorage.removeItem(STORAGE_KEY);
+        }
+      }
+    });
+    
+    // ============================================================
+    // Email Form Submission
+    // ============================================================
+    
+    document.getElementById('emailForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const email = document.getElementById('emailInput').value.trim().toLowerCase();
+      
+      if (!utils.isValidEmail(email)) {
+        utils.showError('Please enter a valid email address.', 'messageArea');
+        return;
+      }
+      
+      // Show loading
+      utils.showLoading('messageArea');
+      
+      try {
+        // Query Firestore for participant
+        const participant = await firebaseHelpers.getParticipantByEmail(email);
+        
+        if (!participant) {
+          utils.showError(
+            'Email not found. Please check your email or contact your organizer.',
+            'messageArea'
+          );
+          return;
+        }
+        
+        // Check if matching has been run
+        if (!participant.match_name) {
+          document.getElementById('messageArea').innerHTML = `
+            <div class="bg-blue-50 border border-blue-400 text-blue-700 px-6 py-4 rounded-2xl mb-6">
+              <p class="font-bold text-lg">⏳ Matching Not Yet Complete</p>
+              <p class="text-sm mt-2">The organizer hasn't run the matching algorithm yet. Please check back later!</p>
+            </div>
+          `;
+          return;
+        }
+        
+        // Mark as revealed in Firestore
+        if (!participant.is_revealed) {
+          await firebaseHelpers.updateParticipant(participant.id, {
+            is_revealed: true
+          });
+        }
+        
+        // Store in localStorage for state persistence
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({
+          email: participant.email,
+          name: participant.name,
+          matchName: participant.match_name,
+          matchEmail: participant.match_email,
+          wishlist: participant.wishlist
+        }));
+        
+        // Show the match
+        showMatch(participant);
+        
+      } catch (error) {
+        console.error('Error:', error);
+        utils.showError(
+          'An error occurred. Please try again or contact your organizer.',
+          'messageArea'
+        );
+      }
+    });
+    
+    // ============================================================
+    // Display Match
+    // ============================================================
+    
+    function showMatch(participant) {
+      // Hide email screen
+      document.getElementById('emailScreen').classList.add('hidden');
+      
+      // Populate match screen
+      document.getElementById('participantName').textContent = participant.name;
+      document.getElementById('matchName').textContent = participant.match_name;
+      
+      // Show wishlist if available
+      if (participant.wishlist && participant.wishlist.trim() !== '') {
+        document.getElementById('wishlistContent').textContent = participant.wishlist;
+        document.getElementById('wishlistSection').classList.remove('hidden');
+      }
+      
+      // Show match screen
+      document.getElementById('matchScreen').classList.remove('hidden');
+      
+      // Prevent back button navigation
+      history.pushState(null, null, location.href);
+      window.onpopstate = function() {
+        history.pushState(null, null, location.href);
+      };
+    }
+    
+    async function showMatchDirectly(email) {
+      try {
+        const participant = await firebaseHelpers.getParticipantByEmail(email);
+        
+        if (participant && participant.match_name) {
+          showMatch(participant);
+        } else {
+          // Clear invalid stored data
+          localStorage.removeItem(STORAGE_KEY);
+        }
+      } catch (error) {
+        console.error('Error loading match:', error);
+        localStorage.removeItem(STORAGE_KEY);
+      }
+    }
+  </script>
 </body>
-
 </html>
